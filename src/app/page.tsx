@@ -34,7 +34,6 @@ export default function Home() {
       </HeroSlider>
 
       {/* ギャラリー */}
-      {/* ギャラリー */}
       <section className="px-3 py-16 sm:px-4">
         <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
           スペース紹介
@@ -42,74 +41,126 @@ export default function Home() {
         <Gallery images={GALLERY_IMAGES} />
       </section>
 
-      {/* 特徴 */}
+      {/* スペース情報 */}
       <section className="bg-zinc-50 px-6 py-16">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-10">
-            スペースの特徴
+          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-4">
+            スペースについて
           </h2>
-          <div className="grid gap-8 sm:grid-cols-3">
-            <Feature
-              title="本格キッチン設備"
-              description="広々としたキッチンカウンター・調理設備を完備。料理教室やパーティーに最適です。"
-            />
-            <Feature
-              title="プロジェクター＆大画面"
-              description="大型スクリーン・プロジェクター完備。セミナーや上映会にもご利用いただけます。"
-            />
-            <Feature
-              title="柔軟な時間帯"
-              description="1時間単位で予約可能。朝の仕込みから夜のイベントまで、お好きな時間にご利用いただけます。"
-            />
+          <p className="text-zinc-600 text-center mb-10 max-w-2xl mx-auto">
+            「家以上、店未満」をコンセプトとした完全装備のレンタルキッチン。
+            飲食店営業許可・菓子製造業許可・惣菜製造業許可を取得済み。
+            24時間利用可能で、毎日清掃を行い清潔な環境を維持しています。
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4 text-center">
+            <InfoCard label="広さ" value="52.09㎡" sub="約32畳" />
+            <InfoCard label="収容人数" value="最大41名" sub="着席40名" />
+            <InfoCard label="営業許可" value="取得済" sub="飲食店・菓子・惣菜" />
+            <InfoCard label="利用時間" value="24時間" sub="1時間単位" />
           </div>
         </div>
       </section>
 
-      {/* 設備 */}
+      {/* 利用用途 */}
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
-          設備・備品
+          こんな用途に
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm text-zinc-700">
-          <EquipmentItem label="キッチンカウンター（シンク付）" />
-          <EquipmentItem label="冷蔵庫" />
-          <EquipmentItem label="電子レンジ" />
-          <EquipmentItem label="トースター" />
-          <EquipmentItem label="コーヒーメーカー" />
-          <EquipmentItem label="カウンターチェア" />
-          <EquipmentItem label="大型ダイニングテーブル" />
-          <EquipmentItem label="ソファ席（複数）" />
-          <EquipmentItem label="プロジェクター＆大型スクリーン" />
-          <EquipmentItem label="ホワイトボード" />
-          <EquipmentItem label="トラックライト照明" />
-          <EquipmentItem label="Wi-Fi" />
-          <EquipmentItem label="エアコン" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <UsageTag label="料理教室" />
+          <UsageTag label="動画撮影" />
+          <UsageTag label="商品撮影" />
+          <UsageTag label="女子会・ママ会" />
+          <UsageTag label="誕生日会" />
+          <UsageTag label="セミナー・勉強会" />
+          <UsageTag label="飲食店運営" />
+          <UsageTag label="間借りカフェ" />
+          <UsageTag label="キッチンカーの仕込み" />
+          <UsageTag label="パーティー" />
+          <UsageTag label="上映会" />
+          <UsageTag label="ワークショップ" />
+        </div>
+      </section>
+
+      {/* 設備・備品 */}
+      <section className="bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
+            設備・備品
+          </h2>
+          <div className="space-y-6">
+            <EquipmentCategory
+              title="キッチン"
+              items={[
+                "IHコンロ",
+                "キッチンカウンター（シンク付）",
+                "冷蔵庫",
+                "オーブンレンジ",
+                "炊飯器",
+                "トースター",
+                "コーヒーメーカー",
+                "鍋・フライパン",
+                "包丁セット・まな板",
+              ]}
+            />
+            <EquipmentCategory
+              title="食器"
+              items={[
+                "タンブラー",
+                "スプーン・フォーク",
+                "箸",
+                "大皿・深皿",
+                "ボウル",
+                "プレート",
+              ]}
+            />
+            <EquipmentCategory
+              title="家具・設備"
+              items={[
+                "大型ダイニングテーブル",
+                "カウンターチェア",
+                "ソファ席（複数）",
+                "プロジェクター＆大型スクリーン",
+                "アンプ・スピーカー",
+                "ホワイトボード",
+                "トラックライト照明",
+                "Wi-Fi",
+                "エアコン",
+                "トイレ",
+              ]}
+            />
+          </div>
         </div>
       </section>
 
       {/* 料金 */}
-      <section className="bg-zinc-50 px-6 py-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-2xl font-bold text-zinc-900 mb-4">料金</h2>
-          <p className="text-zinc-600 mb-8">
-            1時間単位でご利用いただけます。料金は曜日により異なります。
-          </p>
-          <div className="inline-flex gap-8">
-            <PriceCard label="平日" price="3,000" unit="円/時間" />
-            <PriceCard label="土日祝" price="4,000" unit="円/時間" />
-          </div>
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-4">
+          料金
+        </h2>
+        <p className="text-zinc-600 text-center mb-8">
+          1時間単位でご利用いただけます。料金は曜日により異なります。
+        </p>
+        <div className="flex justify-center gap-6 flex-wrap">
+          <PriceCard label="平日" price="3,000" unit="円/時間" />
+          <PriceCard label="土日祝" price="4,000" unit="円/時間" />
         </div>
       </section>
 
       {/* アクセス */}
-      <section className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 mb-4">アクセス</h2>
-        <p className="text-zinc-600">
-          東京都千代田区 神田エリア
-        </p>
-        <p className="text-sm text-zinc-500 mt-1">
-          ※ 詳細な住所は予約確定後にお知らせします
-        </p>
+      <section className="bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-2xl font-bold text-zinc-900 mb-6">アクセス</h2>
+          <p className="text-zinc-700 font-medium">
+            〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
+          </p>
+          <div className="mt-4 space-y-1 text-sm text-zinc-600">
+            <p>JR山手線 神田駅 徒歩5分</p>
+            <p>東京メトロ東西線 大手町駅 徒歩6分</p>
+            <p>都営新宿線 小川町駅 徒歩6分</p>
+            <p>東京メトロ丸ノ内線 淡路町駅 徒歩6分</p>
+          </div>
+        </div>
       </section>
 
       {/* CTA */}
@@ -133,26 +184,53 @@ export default function Home() {
   );
 }
 
-function Feature({
-  title,
-  description,
+function InfoCard({
+  label,
+  value,
+  sub,
 }: {
-  title: string;
-  description: string;
+  label: string;
+  value: string;
+  sub: string;
 }) {
   return (
-    <div className="text-center">
-      <h3 className="text-lg font-semibold text-zinc-900 mb-2">{title}</h3>
-      <p className="text-sm text-zinc-600">{description}</p>
+    <div className="rounded-xl border border-zinc-200 bg-white px-4 py-5">
+      <p className="text-xs text-zinc-500 mb-1">{label}</p>
+      <p className="text-2xl font-bold text-zinc-900">{value}</p>
+      <p className="text-xs text-zinc-500 mt-1">{sub}</p>
     </div>
   );
 }
 
-function EquipmentItem({ label }: { label: string }) {
+function UsageTag({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
-      <span className="text-amber-600">&#10003;</span>
-      <span>{label}</span>
+    <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-800">
+      {label}
+    </div>
+  );
+}
+
+function EquipmentCategory({
+  title,
+  items,
+}: {
+  title: string;
+  items: string[];
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-zinc-900 mb-3">{title}</h3>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <span
+            key={item}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700"
+          >
+            <span className="text-amber-600">&#10003;</span>
+            {item}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
