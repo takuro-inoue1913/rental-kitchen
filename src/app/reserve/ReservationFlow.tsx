@@ -7,6 +7,7 @@ import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
+import { LoadingButton } from "@/app/_components/LoadingButton";
 import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
 import type { Database, PricingType } from "@/lib/types";
 
@@ -195,21 +196,16 @@ export function ReservationFlow({ options }: Props) {
           </div>
         )}
         <div className="flex gap-3 mt-6">
-          <button
-            type="button"
-            onClick={() => setStep("date")}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-          >
+          <LoadingButton variant="outline" onClick={() => setStep("date")}>
             戻る
-          </button>
-          <button
-            type="button"
+          </LoadingButton>
+          <LoadingButton
+            loading={loading}
             disabled={!canProceed}
             onClick={() => setStep("options")}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             次へ
-          </button>
+          </LoadingButton>
         </div>
       </section>
 
@@ -230,20 +226,12 @@ export function ReservationFlow({ options }: Props) {
           </p>
         )}
         <div className="flex gap-3 mt-6">
-          <button
-            type="button"
-            onClick={() => setStep("time")}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-          >
+          <LoadingButton variant="outline" onClick={() => setStep("time")}>
             戻る
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep("confirm")}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white font-medium hover:bg-amber-700"
-          >
+          </LoadingButton>
+          <LoadingButton onClick={() => setStep("confirm")}>
             確認へ
-          </button>
+          </LoadingButton>
         </div>
       </section>
 
@@ -303,21 +291,17 @@ export function ReservationFlow({ options }: Props) {
         )}
 
         <div className="flex gap-3 mt-6">
-          <button
-            type="button"
-            onClick={() => setStep("options")}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-          >
+          <LoadingButton variant="outline" onClick={() => setStep("options")}>
             戻る
-          </button>
-          <button
-            type="button"
-            disabled={!guestName || !guestEmail || submitting}
+          </LoadingButton>
+          <LoadingButton
+            loading={submitting}
+            disabled={!guestName || !guestEmail}
             onClick={handleCheckout}
-            className="flex-1 rounded-lg bg-amber-600 px-4 py-3 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-3"
           >
-            {submitting ? "処理中..." : `決済に進む（¥${totalPrice.toLocaleString()}）`}
-          </button>
+            {`決済に進む（¥${totalPrice.toLocaleString()}）`}
+          </LoadingButton>
         </div>
         <p className="text-xs text-zinc-500 text-center mt-3">
           ※ 決済は Stripe の安全な決済画面で行われます
