@@ -56,20 +56,20 @@ export function Gallery({ images }: Props) {
   return (
     <>
       {/* グリッド */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {images.map((img, i) => (
           <button
             key={img.src}
             type="button"
             onClick={() => setSelectedIndex(i)}
-            className="group relative aspect-[4/3] overflow-hidden rounded-xl cursor-pointer"
+            className="group relative aspect-[3/2] overflow-hidden rounded-xl cursor-pointer"
           >
             <Image
               src={img.src}
               alt={img.alt}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, 50vw"
             />
             <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
             <span className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-3 py-2 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
