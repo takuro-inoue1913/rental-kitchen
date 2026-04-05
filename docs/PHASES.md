@@ -1,6 +1,6 @@
 # 実装フェーズ計画
 
-レンタルキッチン（kitchen神田TYD）の予約サイト構築における実装フェーズ。
+リノスペキッチン神田TYD の予約サイト構築における実装フェーズ。
 
 ## インフラ構成
 
@@ -13,6 +13,15 @@
 | カレンダー連携 | Google Calendar API | $0 |
 | ドメイン | 任意レジストラ | ~¥1,500/年 |
 
+## 料金体系
+
+- **平日**: ¥11,000/日（税込）丸一日貸切・人数制限なし
+- **土日祝**: ¥2,500/時間（税込）1時間単位
+- `availability_rules.pricing_type` で `daily` / `hourly` を管理
+- 管理画面から変更可能
+
+---
+
 ## Phase 1: Supabase 基盤・DB 設計・認証ミドルウェア
 
 **ブランチ**: `phase1/supabase-foundation`
@@ -21,13 +30,13 @@
 
 ### 内容
 - Supabase クライアント設定（browser / server / admin の3種）
-- 認証ミドルウェア（proxy.ts）によるセッション管理・アクセス制御
+- 認証プロキシ（proxy.ts）によるセッション管理・アクセス制御
   - `/admin/*`: ログイン + is_admin 検証
   - `/my/*`: ログイン必須
   - リダイレクト時の Cookie 引き継ぎ・クエリ文字列保持
 - DB マイグレーション SQL（6テーブル + RLS + トリガー）
   - `profiles`: ユーザー情報（auth.users 拡張、is_admin）
-  - `availability_rules`: 営業スケジュール（曜日・時間・料金）
+  - `availability_rules`: 営業スケジュール（曜日・時間・料金・pricing_type）
   - `blocked_dates`: 休業日
   - `options`: オプションサービス（清掃サービスなど）
   - `reservations`: 予約（source: web/google_calendar/manual, google_event_id 対応）
@@ -36,21 +45,36 @@
 - TypeScript 型定義（Database 型、全テーブル Row/Insert/Update）
 - Stripe サーバー SDK 初期化
 - 環境変数テンプレート
+- 初期データは seed スクリプトで投入（マイグレーションには含めない）
 
 ## Phase 2: LP・予約フロー画面・空き枠 API
 
 **ブランチ**: `phase2/reservation-flow`
+**PR**: #2
+**ステータス**: レビュー待ち
 
 ### 内容
-- トップページ（LP）: キッチン紹介・写真・アクセス・料金
+- トップページ（LP）:
+  - ヒーロー: 8枚自動スライドショー（左右ボタン・ドットインジケーター）
+  - 料金セクション（ヒーロー直下に配置）
+  - スペース情報（52㎡/最大41名/営業許可/24時間）
+  - ギャラリー: 8枚グリッド + ライトボックス拡大表示
+  - 利用用途（料理教室・撮影・パーティー等12種）
+  - 設備一覧（キッチン・食器・家具の3カテゴリ、スペースマーケット実データ準拠）
+  - アクセス（住所・4駅 + Google Maps 埋め込み）
 - `/reserve` 予約フロー（1ページ内ステップ UI）:
   1. カレンダーで日付選択
-  2. 空き時間枠を選択（複数枠可）
+  2. 平日 → 「丸一日プラン ¥11,000」表示 / 土日祝 → 時間枠選択（¥2,500/時間）
   3. オプション選択（清掃サービス）
-  4. ゲスト（メール入力）or ログイン選択
-  5. 料金確認
-- `GET /api/availability`: 空き枠取得 API
-  - availability_rules と既存 reservations から空きスロットを算出
+  4. 料金確認
+- `GET /api/availability?date=YYYY-MM-DD`: 空き枠取得 API
+  - `pricing_type: daily` → 日単位の空き判定
+  - `pricing_type: hourly` → 時間枠ごとの空き判定
+- DB マイグレーション: `availability_rules` に `pricing_type` カラム追加
+
+### 未実装（Phase 3 以降）
+- ゲスト or ログイン選択ステップ（Phase 4 で認証画面とセットで実装）
+- 「決済に進む」ボタンの実際の Stripe 連携（Phase 3）
 
 ## Phase 3: Stripe 決済統合・Webhook・予約ステータス管理
 
@@ -59,12 +83,13 @@
 ### 内容
 - `POST /api/stripe/checkout`: Checkout Session 作成
   - サーバーサイドで空き確認 → reservations に pending 挿入 → Stripe へ
+  - daily / hourly の料金計算に対応
 - `POST /api/stripe/webhook`: Webhook ハンドラ
   - `checkout.session.completed` → confirmed に更新 + 確認メール
   - `checkout.session.expired` → cancelled に更新
 - `/reserve/confirmation`: 予約完了画面
 - 予約ステータスライフサイクル: pending → confirmed → completed / cancelled
-- pg_cron で古い pending の自動キャンセル（15分）
+- pg_cron で古い pending の自動キャンセル（30分）
 
 ## Phase 4: 認証画面・マイページ
 
@@ -75,6 +100,7 @@
 - `/auth/register`: 会員登録画面
 - `/auth/callback`: Supabase Auth コールバック
 - `/my/reservations`: 会員の予約履歴一覧
+- 予約フローにゲスト or ログイン選択ステップを追加
 
 ## Phase 5: 管理画面
 
@@ -83,6 +109,8 @@
 ### 内容
 - `/admin`: 予約一覧（日付フィルタ・ステータスバッジ）
 - `/admin/reservations/[id]`: 予約詳細
+- `/admin/settings`: 料金設定（availability_rules の pricing_type・price_per_slot を編集）
+- `/admin/settings`: オプション管理（options の追加・編集・無効化）
 - is_admin によるアクセス制御（proxy.ts で実装済み）
 
 ## Phase 6: Google カレンダー双方向同期
