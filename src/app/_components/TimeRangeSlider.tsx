@@ -1,21 +1,31 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { TimeSlot } from "@/app/api/availability/route";
+import type { TimeSlot, TimeBlock } from "@/app/api/availability/route";
 
-type Props = {
+type BaseProps = {
   slots: TimeSlot[];
   selectedSlots: TimeSlot[];
   onSelect: (selected: TimeSlot[]) => void;
-  disabled?: boolean;
 };
 
-export function TimeRangeSlider({
-  slots,
-  selectedSlots,
-  onSelect,
-  disabled,
-}: Props) {
+type HourlyProps = BaseProps & {
+  mode?: "hourly";
+  blocks?: never;
+};
+
+type BlockProps = BaseProps & {
+  mode: "block";
+  blocks: TimeBlock[];
+};
+
+type Props = HourlyProps | BlockProps;
+
+export function TimeRangeSlider(props: Props) {
+  const { slots, selectedSlots, onSelect } = props;
+  const mode = props.mode ?? "hourly";
+  const blocks: TimeBlock[] = mode === "block" && props.blocks ? props.blocks : [];
+
   const barRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<"start" | "end" | null>(null);
 
@@ -34,6 +44,15 @@ export function TimeRangeSlider({
         )
       : -1;
 
+  // ブロックごとのインデックス範囲を算出
+  const blockRanges = blocks.map((block) => {
+    const start = slots.findIndex((s) => s.startTime === block.startTime);
+    const end = slots.findIndex(
+      (s) => s.endTime === block.endTime
+    );
+    return { start, end: end >= 0 ? end : slots.length - 1 };
+  });
+
   const getSlotIndexFromX = useCallback(
     (clientX: number) => {
       if (!barRef.current) return 0;
@@ -47,28 +66,41 @@ export function TimeRangeSlider({
 
   const selectRange = useCallback(
     (newStart: number, newEnd: number) => {
-      const [s, e] = newStart <= newEnd ? [newStart, newEnd] : [newEnd, newStart];
+      const [s, e] =
+        newStart <= newEnd ? [newStart, newEnd] : [newEnd, newStart];
       const range = slots.slice(s, e + 1);
-      // 範囲内に予約済み枠があったら選択しない
       if (range.some((slot) => !slot.available)) return;
       onSelect(range);
     },
     [slots, onSelect]
   );
 
-  const handleBarPointerDown = useCallback(
+  // block モード: クリックでブロック全体を選択
+  const handleBlockBarClick = useCallback(
     (e: React.PointerEvent) => {
-      if (disabled) return;
+      const idx = getSlotIndexFromX(e.clientX);
+      // クリック位置がどのブロックに属するか
+      const blockIdx = blockRanges.findIndex(
+        (r) => idx >= r.start && idx <= r.end
+      );
+      if (blockIdx < 0) return;
+      const range = blockRanges[blockIdx];
+      selectRange(range.start, range.end);
+    },
+    [getSlotIndexFromX, blockRanges, selectRange]
+  );
+
+  // hourly モード: ドラッグで範囲選択
+  const handleHourlyBarPointerDown = useCallback(
+    (e: React.PointerEvent) => {
       const idx = getSlotIndexFromX(e.clientX);
       if (!slots[idx].available) return;
 
       if (startIdx < 0) {
-        // 未選択 → 新規選択開始
         selectRange(idx, idx);
         setDragging("end");
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
       } else {
-        // 既に選択あり → クリック位置に近いハンドルをドラッグ
         const distToStart = Math.abs(idx - startIdx);
         const distToEnd = Math.abs(idx - endIdx);
         const handle = distToStart <= distToEnd ? "start" : "end";
@@ -81,23 +113,23 @@ export function TimeRangeSlider({
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
       }
     },
-    [disabled, getSlotIndexFromX, slots, startIdx, endIdx, selectRange]
+    [getSlotIndexFromX, slots, startIdx, endIdx, selectRange]
   );
 
   const handlePointerDown = useCallback(
     (handle: "start" | "end", e: React.PointerEvent) => {
-      if (disabled) return;
+      if (mode === "block") return;
       e.preventDefault();
       e.stopPropagation();
       setDragging(handle);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [disabled]
+    [mode]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!dragging || disabled) return;
+      if (!dragging || mode === "block") return;
       const idx = getSlotIndexFromX(e.clientX);
       if (dragging === "start") {
         selectRange(idx, endIdx >= 0 ? endIdx : idx);
@@ -105,7 +137,7 @@ export function TimeRangeSlider({
         selectRange(startIdx >= 0 ? startIdx : idx, idx);
       }
     },
-    [dragging, disabled, getSlotIndexFromX, startIdx, endIdx, selectRange]
+    [dragging, mode, getSlotIndexFromX, startIdx, endIdx, selectRange]
   );
 
   const handlePointerUp = useCallback(() => {
@@ -120,24 +152,44 @@ export function TimeRangeSlider({
     );
   }
 
-  // 時間ラベル（6時間ごと）
+  // 時間ラベル間隔
   const labelInterval = Math.max(1, Math.floor(slots.length / 6));
+
+  // block モード: どのブロックが選択中か
+  const selectedBlockIdx =
+    mode === "block" && startIdx >= 0
+      ? blockRanges.findIndex(
+          (r) => r.start === startIdx && r.end === endIdx
+        )
+      : -1;
 
   return (
     <div className="space-y-4">
       {/* 選択中の時間表示 */}
       <div className="text-center">
         {selectedSlots.length > 0 ? (
-          <p className="text-lg font-semibold text-amber-600">
-            {selectedSlots[0].startTime} -{" "}
-            {selectedSlots[selectedSlots.length - 1].endTime}
-            <span className="text-sm font-normal text-zinc-500 ml-2">
-              ({selectedSlots.length}時間)
-            </span>
-          </p>
+          <div>
+            <p className="text-lg font-semibold text-amber-600">
+              {selectedSlots[0].startTime} -{" "}
+              {selectedSlots[selectedSlots.length - 1].endTime}
+              <span className="text-sm font-normal text-zinc-500 ml-2">
+                ({selectedSlots.length}時間)
+              </span>
+            </p>
+            {mode === "block" && selectedBlockIdx >= 0 && (
+              <p className="text-xl font-bold text-amber-600 mt-1">
+                ¥{blocks[selectedBlockIdx].price.toLocaleString()}
+                <span className="text-sm font-normal text-zinc-500 ml-1">
+                  /枠（税込）
+                </span>
+              </p>
+            )}
+          </div>
         ) : (
           <p className="text-sm text-zinc-500">
-            バーをクリックまたはドラッグして時間帯を選択
+            {mode === "block"
+              ? "バーの空き枠をクリックして選択"
+              : "バーをクリックまたはドラッグして時間帯を選択"}
           </p>
         )}
       </div>
@@ -152,9 +204,10 @@ export function TimeRangeSlider({
         <div
           ref={barRef}
           className="relative h-12 rounded-lg overflow-hidden cursor-pointer"
-          onPointerDown={handleBarPointerDown}
+          onPointerDown={
+            mode === "block" ? handleBlockBarClick : handleHourlyBarPointerDown
+          }
         >
-          {/* 各枠 */}
           <div className="flex h-full">
             {slots.map((slot, i) => {
               const isSelected =
@@ -176,8 +229,8 @@ export function TimeRangeSlider({
             })}
           </div>
 
-          {/* ドラッグハンドル: 開始 */}
-          {startIdx >= 0 && !disabled && (
+          {/* ドラッグハンドル（hourly のみ） */}
+          {mode === "hourly" && startIdx >= 0 && (
             <div
               className="absolute top-0 h-full w-3 cursor-ew-resize z-10 flex items-center justify-center"
               style={{ left: `${(startIdx / slots.length) * 100}%` }}
@@ -186,9 +239,7 @@ export function TimeRangeSlider({
               <div className="w-1.5 h-8 rounded-full bg-amber-700 shadow" />
             </div>
           )}
-
-          {/* ドラッグハンドル: 終了 */}
-          {endIdx >= 0 && !disabled && (
+          {mode === "hourly" && endIdx >= 0 && (
             <div
               className="absolute top-0 h-full w-3 cursor-ew-resize z-10 flex items-center justify-center"
               style={{
@@ -221,10 +272,7 @@ export function TimeRangeSlider({
           )}
           <div
             className="text-xs text-zinc-500"
-            style={{
-              position: "absolute",
-              right: 0,
-            }}
+            style={{ position: "absolute", right: 0 }}
           >
             {slots[slots.length - 1].endTime}
           </div>
@@ -247,7 +295,6 @@ export function TimeRangeSlider({
         </div>
       </div>
 
-      {/* 空き枠がない */}
       {availableSlots.length === 0 && (
         <p className="text-sm text-red-500 text-center">
           この日は全時間帯が予約済みです

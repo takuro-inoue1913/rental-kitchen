@@ -24,7 +24,6 @@ export function ReservationFlow({ options }: Props) {
   const [dailyPrice, setDailyPrice] = useState<number | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [blocks, setBlocks] = useState<TimeBlock[]>([]);
-  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,6 @@ export function ReservationFlow({ options }: Props) {
       setDailyPrice(data.dailyPrice);
       setSlots(data.slots);
       setBlocks(data.blocks);
-      setSelectedBlockIndex(null);
       setSelectedSlots([]);
     } finally {
       setLoading(false);
@@ -68,25 +66,20 @@ export function ReservationFlow({ options }: Props) {
     );
   }, []);
 
-  const handleBlockSelect = useCallback(
-    (index: number) => {
-      setSelectedBlockIndex(index);
-      const block = blocks[index];
-      // ブロックに対応するスロットを選択状態にする
-      const blockSlots = slots.filter(
-        (s) => s.startTime >= block.startTime && s.endTime <= block.endTime && s.available
-      );
-      setSelectedSlots(blockSlots);
-    },
-    [blocks, slots]
-  );
+  // daily: 選択中のスロットがどのブロックに属するか → その price
+  const selectedBlock =
+    pricingType === "daily" && selectedSlots.length > 0
+      ? blocks.find(
+          (b) =>
+            b.startTime === selectedSlots[0].startTime &&
+            b.endTime === selectedSlots[selectedSlots.length - 1].endTime
+        )
+      : null;
 
   const basePrice =
-    pricingType === "daily" && selectedBlockIndex !== null
-      ? blocks[selectedBlockIndex].price
-      : pricingType === "daily"
-        ? 0
-        : selectedSlots.reduce((sum, s) => sum + s.price, 0);
+    pricingType === "daily"
+      ? (selectedBlock?.price ?? 0)
+      : selectedSlots.reduce((sum, s) => sum + s.price, 0);
 
   const totalPrice =
     basePrice +
@@ -94,8 +87,7 @@ export function ReservationFlow({ options }: Props) {
       .filter((o) => selectedOptionIds.includes(o.id))
       .reduce((sum, o) => sum + o.price, 0);
 
-  const canProceed =
-    pricingType === "daily" ? selectedBlockIndex !== null : selectedSlots.length > 0;
+  const canProceed = selectedSlots.length > 0;
 
   return (
     <div className="space-y-8">
@@ -120,48 +112,21 @@ export function ReservationFlow({ options }: Props) {
         {loading ? (
           <p className="text-zinc-500 text-sm">読み込み中...</p>
         ) : pricingType === "daily" ? (
-          /* 平日: ブロック選択 */
+          /* 平日: スライダーバーでブロック選択 */
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 mb-4">
               利用枠を選択
             </h2>
-            {blocks.length === 0 ? (
-              <div className="rounded-lg border border-zinc-200 bg-zinc-100 p-6 text-center">
-                <p className="text-zinc-500">この日は全時間帯が予約済みです</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-zinc-600">
-                  空いている時間帯を選択してください（1枠 ¥{(dailyPrice ?? 0).toLocaleString()} 税込）
-                </p>
-                {blocks.map((block, i) => (
-                  <button
-                    key={block.startTime}
-                    type="button"
-                    onClick={() => handleBlockSelect(i)}
-                    className={`w-full rounded-lg border-2 p-5 text-left transition-colors ${
-                      selectedBlockIndex === i
-                        ? "border-amber-600 bg-amber-50"
-                        : "border-zinc-200 bg-white hover:border-amber-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-lg font-semibold text-zinc-900">
-                          {block.startTime} - {block.endTime}
-                        </p>
-                        <p className="text-sm text-zinc-500 mt-1">
-                          人数制限なし
-                        </p>
-                      </div>
-                      <p className="text-xl font-bold text-amber-600">
-                        ¥{block.price.toLocaleString()}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            <p className="text-sm text-zinc-600 mb-4">
+              空いている枠をクリックして選択（1枠 ¥{(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし）
+            </p>
+            <TimeRangeSlider
+              mode="block"
+              slots={slots}
+              blocks={blocks}
+              selectedSlots={selectedSlots}
+              onSelect={handleSlotSelect}
+            />
           </div>
         ) : (
           /* 土日祝: 時間帯選択 */
