@@ -1,6 +1,6 @@
-export const SITE_NAME = "レンタルキッチン";
+export const SITE_NAME = "リノスペキッチン神田TYD";
 export const SITE_DESCRIPTION =
-  "料理教室・撮影・イベントに最適なレンタルキッチンスペース";
+  "「家以上、店未満」完全装備のレンタルキッチン。料理教室・撮影・パーティーに。";
 export const TIMEZONE = "Asia/Tokyo";
 export const CURRENCY = "jpy";
 

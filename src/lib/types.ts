@@ -6,6 +6,8 @@ export type ReservationStatus =
 
 export type ReservationSource = "web" | "google_calendar" | "manual";
 
+export type PricingType = "daily" | "hourly";
+
 export type Database = {
   public: {
     Tables: {
@@ -42,6 +44,7 @@ export type Database = {
           end_time: string;
           slot_duration_minutes: number;
           price_per_slot: number;
+          pricing_type: PricingType;
           is_active: boolean;
           created_at: string;
         };
@@ -52,6 +55,7 @@ export type Database = {
           end_time: string;
           slot_duration_minutes?: number;
           price_per_slot: number;
+          pricing_type?: PricingType;
           is_active?: boolean;
           created_at?: string;
         };
@@ -61,6 +65,7 @@ export type Database = {
           end_time?: string;
           slot_duration_minutes?: number;
           price_per_slot?: number;
+          pricing_type?: PricingType;
           is_active?: boolean;
         };
       };

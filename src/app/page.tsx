@@ -1,65 +1,275 @@
-import Image from "next/image";
+import Link from "next/link";
+import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { HeroSlider } from "@/app/_components/HeroSlider";
+import { Gallery } from "@/app/_components/Gallery";
+
+const GALLERY_IMAGES = [
+  { src: "/images/kitchen-angle.jpeg", alt: "キッチン設備" },
+  { src: "/images/dining-table.jpeg", alt: "ダイニングテーブル" },
+  { src: "/images/whiteboard.jpeg", alt: "ホワイトボード" },
+  { src: "/images/sofa.jpeg", alt: "ソファスペース" },
+  { src: "/images/meeting.jpeg", alt: "会議スペース" },
+  { src: "/images/space-long.jpeg", alt: "スペース全景" },
+  { src: "/images/space-back.jpeg", alt: "キッチン＆カウンター" },
+  { src: "/images/space-side.jpeg", alt: "ダイニング＆ラウンジ" },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex flex-col flex-1">
+      {/* ヒーロー */}
+      <HeroSlider>
+        <div className="flex flex-col items-center gap-5 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            {SITE_NAME}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="max-w-lg text-lg text-white/90">{SITE_DESCRIPTION}</p>
+          <Link
+            href="/reserve"
+            className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-amber-500 px-8 text-white font-medium transition-colors hover:bg-amber-600"
+          >
+            予約する
+          </Link>
+        </div>
+      </HeroSlider>
+
+      {/* 料金 */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>料金</SectionHeading>
+          <p className="text-zinc-600 text-center mb-10 text-lg">
+            人数制限なし。料金は曜日により異なります。
           </p>
+          <div className="flex justify-center gap-6 flex-wrap">
+            <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
+            <PriceCard label="土日祝" price="2,500" unit="円/時間（税込）" sub="1時間単位" />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </section>
+
+      {/* スペース情報 */}
+      <section className="bg-zinc-50 px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>スペースについて</SectionHeading>
+          <p className="text-zinc-600 text-center mb-10 max-w-2xl mx-auto text-lg">
+            「家以上、店未満」をコンセプトとした完全装備のレンタルキッチン。
+            飲食店営業許可・菓子製造業許可・惣菜製造業許可を取得済み。
+            24時間利用可能で、毎日清掃を行い清潔な環境を維持しています。
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4 text-center">
+            <InfoCard label="広さ" value="52.09㎡" sub="約32畳" />
+            <InfoCard label="収容人数" value="最大41名" sub="着席40名" />
+            <InfoCard label="営業許可" value="取得済" sub="飲食店・菓子・惣菜" />
+            <InfoCard label="利用時間" value="24時間" sub="1時間単位" />
+          </div>
+        </div>
+      </section>
+
+      {/* ギャラリー */}
+      <section className="px-3 py-20 sm:px-4">
+        <SectionHeading>スペース紹介</SectionHeading>
+        <Gallery images={GALLERY_IMAGES} />
+      </section>
+
+      {/* 利用用途 */}
+      <section className="bg-zinc-50 px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>こんな用途に</SectionHeading>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <UsageTag label="料理教室" />
+            <UsageTag label="動画撮影" />
+            <UsageTag label="商品撮影" />
+            <UsageTag label="女子会・ママ会" />
+            <UsageTag label="誕生日会" />
+            <UsageTag label="セミナー・勉強会" />
+            <UsageTag label="飲食店運営" />
+            <UsageTag label="間借りカフェ" />
+            <UsageTag label="キッチンカーの仕込み" />
+            <UsageTag label="パーティー" />
+            <UsageTag label="上映会" />
+            <UsageTag label="ワークショップ" />
+          </div>
+        </div>
+      </section>
+
+      {/* 設備・備品 */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>設備・備品</SectionHeading>
+          <div className="space-y-8">
+            <EquipmentCategory
+              title="キッチン"
+              items={[
+                "IHコンロ",
+                "キッチンカウンター（シンク付）",
+                "冷蔵庫",
+                "オーブンレンジ",
+                "炊飯器",
+                "トースター",
+                "コーヒーメーカー",
+                "鍋・フライパン",
+                "包丁セット・まな板",
+              ]}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <EquipmentCategory
+              title="食器"
+              items={[
+                "タンブラー",
+                "スプーン・フォーク",
+                "箸",
+                "大皿・深皿",
+                "ボウル",
+                "プレート",
+              ]}
+            />
+            <EquipmentCategory
+              title="家具・設備"
+              items={[
+                "大型ダイニングテーブル",
+                "カウンターチェア",
+                "ソファ席（複数）",
+                "プロジェクター＆大型スクリーン",
+                "アンプ・スピーカー",
+                "ホワイトボード",
+                "トラックライト照明",
+                "Wi-Fi",
+                "エアコン",
+                "トイレ",
+              ]}
+            />
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* アクセス */}
+      <section className="bg-zinc-50 px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>アクセス</SectionHeading>
+          <div className="grid gap-8 md:grid-cols-2 items-start">
+            <div className="text-center md:text-left">
+              <p className="text-zinc-700 font-medium text-lg">
+                〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
+              </p>
+              <div className="mt-4 space-y-2 text-zinc-600">
+                <p>JR山手線 神田駅 徒歩5分</p>
+                <p>東京メトロ東西線 大手町駅 徒歩6分</p>
+                <p>都営新宿線 小川町駅 徒歩6分</p>
+                <p>東京メトロ丸ノ内線 淡路町駅 徒歩6分</p>
+              </div>
+            </div>
+            <div className="aspect-[4/3] w-full overflow-hidden rounded-xl">
+              <iframe
+                src="https://maps.google.com/maps?q=%E3%83%AA%E3%83%8E%E3%82%B9%E3%83%9Akitchen%E7%A5%9E%E7%94%B0TYD&z=17&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="リノスペキッチン神田TYD"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="flex flex-col items-center gap-4 bg-amber-50 px-6 py-20 text-center">
+        <h2 className="text-3xl font-bold text-zinc-900">
+          まずは空き状況をチェック
+        </h2>
+        <Link
+          href="/reserve"
+          className="inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
+        >
+          空き状況を確認して予約する
+        </Link>
+      </section>
+
+      {/* フッター */}
+      <footer className="border-t border-zinc-200 px-6 py-8 text-center text-sm text-zinc-500">
+        <p>&copy; 2026 {SITE_NAME}. All rights reserved.</p>
+      </footer>
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-3xl font-bold text-center mb-10 tracking-tight text-amber-700">
+      {children}
+    </h2>
+  );
+}
+
+function InfoCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white px-4 py-5">
+      <p className="text-xs text-zinc-500 mb-1">{label}</p>
+      <p className="text-2xl font-bold text-zinc-900">{value}</p>
+      <p className="text-xs text-zinc-500 mt-1">{sub}</p>
+    </div>
+  );
+}
+
+function UsageTag({ label }: { label: string }) {
+  return (
+    <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-800">
+      {label}
+    </div>
+  );
+}
+
+function EquipmentCategory({
+  title,
+  items,
+}: {
+  title: string;
+  items: string[];
+}) {
+  return (
+    <div>
+      <h3 className="text-base font-semibold text-zinc-900 mb-3">{title}</h3>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <span
+            key={item}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700"
+          >
+            <span className="text-amber-600">&#10003;</span>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PriceCard({
+  label,
+  price,
+  unit,
+  sub,
+}: {
+  label: string;
+  price: string;
+  unit: string;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white px-10 py-8">
+      <p className="text-sm text-zinc-500 mb-1">{label}</p>
+      <p className="text-4xl font-bold text-zinc-900">{price}</p>
+      <p className="text-sm text-zinc-500 mt-1">{unit}</p>
+      {sub && <p className="text-xs text-amber-600 mt-2">{sub}</p>}
     </div>
   );
 }
