@@ -29,7 +29,7 @@ export function LoadingButton({
       type="button"
       disabled={isDisabled}
       onClick={onClick}
-      className={`relative inline-flex items-center justify-center px-4 py-2 text-sm transition-colors ${base} ${className}`}
+      className={`relative inline-flex items-center justify-center px-4 py-2 text-sm transition-colors cursor-pointer ${base} ${className}`}
     >
       {loading && (
         <svg

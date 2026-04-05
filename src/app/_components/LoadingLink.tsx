@@ -20,7 +20,7 @@ export function LoadingLink({ href, className = "", children }: Props) {
     <Link
       href={href}
       onClick={handleClick}
-      className={`relative inline-flex items-center justify-center ${className}`}
+      className={`relative inline-flex items-center justify-center cursor-pointer ${className}`}
     >
       {loading && (
         <svg
