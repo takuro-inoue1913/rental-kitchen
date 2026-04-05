@@ -6,8 +6,8 @@ import { NextRequest } from "next/server";
  * POST /api/stripe/webhook
  *
  * Stripe Webhook ハンドラ。
- * checkout.session.completed → 予約を confirmed に
- * checkout.session.expired → 予約を cancelled に
+ * checkout.session.completed → 予約を confirmed に（pending のみ対象、payment_status 確認）
+ * checkout.session.expired → 予約を cancelled に（pending のみ対象）
  */
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -37,7 +37,15 @@ export async function POST(request: NextRequest) {
       const reservationId = session.metadata?.reservation_id;
       if (!reservationId) break;
 
-      await supabase
+      // 決済が完了していることを確認
+      if (session.payment_status !== "paid") {
+        console.warn(
+          `Webhook: session ${session.id} payment_status is ${session.payment_status}, skipping`
+        );
+        break;
+      }
+
+      const { error } = await supabase
         .from("reservations")
         .update({
           status: "confirmed",
@@ -47,8 +55,16 @@ export async function POST(request: NextRequest) {
               ? session.payment_intent
               : null,
         })
-        .eq("id", reservationId);
+        .eq("id", reservationId)
+        .eq("status", "pending");
 
+      if (error) {
+        console.error("Webhook: failed to confirm reservation:", error);
+        return Response.json(
+          { error: "DB update failed" },
+          { status: 500 }
+        );
+      }
       break;
     }
 
@@ -57,12 +73,19 @@ export async function POST(request: NextRequest) {
       const reservationId = session.metadata?.reservation_id;
       if (!reservationId) break;
 
-      await supabase
+      const { error } = await supabase
         .from("reservations")
         .update({ status: "cancelled" })
         .eq("id", reservationId)
         .eq("status", "pending");
 
+      if (error) {
+        console.error("Webhook: failed to cancel reservation:", error);
+        return Response.json(
+          { error: "DB update failed" },
+          { status: 500 }
+        );
+      }
       break;
     }
   }
