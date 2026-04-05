@@ -103,28 +103,8 @@ export async function GET(request: NextRequest) {
   ];
 
   const hasAllDayEvent = calendarEvents.some((e) => e.isAllDay);
-  const hasBooking =
-    (reservations ?? []).length > 0 ||
-    calendarEvents.length > 0;
 
-  // daily の場合: 丸一日の空き状況を返す
-  if (pricingType === "daily") {
-    return Response.json({
-      date: dateParam,
-      pricingType: "daily",
-      dailyPrice: rule.price_per_slot,
-      slots: [
-        {
-          startTime: rule.start_time,
-          endTime: rule.end_time,
-          price: rule.price_per_slot,
-          available: !hasBooking,
-        },
-      ],
-    } satisfies AvailabilityResponse);
-  }
-
-  // hourly の場合: 時間枠ごとの空き状況を返す
+  // 時間枠を生成（daily / hourly 共通）
   const slots: TimeSlot[] = [];
   const startMinutes = timeToMinutes(rule.start_time);
   const endMinutes = timeToMinutes(rule.end_time);
@@ -144,7 +124,7 @@ export async function GET(request: NextRequest) {
     slots.push({
       startTime: slotStart,
       endTime: slotEnd,
-      price: rule.price_per_slot,
+      price: pricingType === "daily" ? 0 : rule.price_per_slot,
       available: !isBooked,
     });
   }
@@ -153,8 +133,8 @@ export async function GET(request: NextRequest) {
 
   return Response.json({
     date: dateParam,
-    pricingType: "hourly",
-    dailyPrice: null,
+    pricingType,
+    dailyPrice: pricingType === "daily" ? rule.price_per_slot : null,
     slots,
   } satisfies AvailabilityResponse);
 }

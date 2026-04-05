@@ -37,8 +37,8 @@ export function ReservationFlow({ options }: Props) {
       setDailyPrice(data.dailyPrice);
       setSlots(data.slots);
 
-      // daily の場合は自動的に全枠を選択
-      if (data.pricingType === "daily" && data.slots.length > 0) {
+      // daily の場合は空いている枠を自動選択
+      if (data.pricingType === "daily") {
         const availableSlots = data.slots.filter((s) => s.available);
         setSelectedSlots(availableSlots);
       }
@@ -92,10 +92,7 @@ export function ReservationFlow({ options }: Props) {
       .filter((o) => selectedOptionIds.includes(o.id))
       .reduce((sum, o) => sum + o.price, 0);
 
-  const isDayAvailable =
-    pricingType === "daily" && slots.length > 0 && slots[0].available;
-  const isDayBooked =
-    pricingType === "daily" && slots.length > 0 && !slots[0].available;
+  const hasAvailableSlots = selectedSlots.length > 0;
 
   return (
     <div className="space-y-8">
@@ -120,31 +117,32 @@ export function ReservationFlow({ options }: Props) {
         {loading ? (
           <p className="text-zinc-500 text-sm">読み込み中...</p>
         ) : pricingType === "daily" ? (
-          /* 平日: 丸一日プラン */
+          /* 平日: 丸一日プラン + 空き時間表示 */
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+            <h2 className="text-lg font-semibold text-zinc-900 mb-2">
               丸一日プラン
             </h2>
-            {isDayBooked ? (
-              <div className="rounded-lg border border-zinc-200 bg-zinc-100 p-6 text-center">
-                <p className="text-zinc-500">この日は予約済みです</p>
-              </div>
-            ) : isDayAvailable ? (
-              <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-6 text-center">
-                <p className="text-lg font-semibold text-zinc-900">
-                  {slots[0].startTime} - {slots[0].endTime}
-                </p>
-                <p className="text-2xl font-bold text-amber-600 mt-2">
-                  ¥{(dailyPrice ?? 0).toLocaleString()}
-                  <span className="text-sm font-normal text-zinc-500 ml-1">
-                    /日（税込）
-                  </span>
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">人数制限なし</p>
-              </div>
-            ) : (
-              <p className="text-zinc-500 text-sm">
-                この日は予約できません。
+            <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-4 text-center mb-4">
+              <p className="text-2xl font-bold text-amber-600">
+                ¥{(dailyPrice ?? 0).toLocaleString()}
+                <span className="text-sm font-normal text-zinc-500 ml-1">
+                  /日（税込）
+                </span>
+              </p>
+              <p className="text-xs text-zinc-500 mt-1">人数制限なし・空き時間のみ利用可</p>
+            </div>
+            <p className="text-sm text-zinc-600 mb-3">
+              予約済みの時間帯はグレー表示されます
+            </p>
+            <TimeSlotGrid
+              slots={slots}
+              selectedSlots={selectedSlots}
+              onToggle={() => {}}
+              disabled
+            />
+            {selectedSlots.length === 0 && (
+              <p className="text-sm text-red-500 mt-3">
+                この日は全時間帯が予約済みです
               </p>
             )}
           </div>
@@ -171,9 +169,7 @@ export function ReservationFlow({ options }: Props) {
           </button>
           <button
             type="button"
-            disabled={
-              pricingType === "daily" ? !isDayAvailable : selectedSlots.length === 0
-            }
+            disabled={!hasAvailableSlots}
             onClick={() => setStep("options")}
             className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >

@@ -6,9 +6,10 @@ type Props = {
   slots: TimeSlot[];
   selectedSlots: TimeSlot[];
   onToggle: (slot: TimeSlot) => void;
+  disabled?: boolean;
 };
 
-export function TimeSlotGrid({ slots, selectedSlots, onToggle }: Props) {
+export function TimeSlotGrid({ slots, selectedSlots, onToggle, disabled }: Props) {
   if (slots.length === 0) {
     return (
       <p className="text-zinc-500 text-sm">
@@ -28,8 +29,8 @@ export function TimeSlotGrid({ slots, selectedSlots, onToggle }: Props) {
           <button
             key={slot.startTime}
             type="button"
-            disabled={!slot.available}
-            onClick={() => onToggle(slot)}
+            disabled={!slot.available || disabled}
+            onClick={() => !disabled && onToggle(slot)}
             className={`
               rounded-lg border px-3 py-3 text-sm transition-colors
               ${
@@ -45,9 +46,11 @@ export function TimeSlotGrid({ slots, selectedSlots, onToggle }: Props) {
               {slot.startTime} - {slot.endTime}
             </span>
             <span className="block text-xs mt-1">
-              {slot.available
-                ? `¥${slot.price.toLocaleString()}`
-                : "予約済み"}
+              {!slot.available
+                ? "予約済み"
+                : slot.price > 0
+                  ? `¥${slot.price.toLocaleString()}`
+                  : "空き"}
             </span>
           </button>
         );
