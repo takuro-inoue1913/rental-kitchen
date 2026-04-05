@@ -82,6 +82,7 @@ export default function Home() {
           <EquipmentItem label="プロジェクター＆大型スクリーン" />
           <EquipmentItem label="ホワイトボード" />
           <EquipmentItem label="トラックライト照明" />
+          <EquipmentItem label="Wi-Fi" />
           <EquipmentItem label="エアコン" />
         </div>
       </section>
