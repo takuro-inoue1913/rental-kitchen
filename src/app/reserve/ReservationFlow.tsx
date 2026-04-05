@@ -104,7 +104,17 @@ export function ReservationFlow({ options }: Props) {
       {/* Step 2: 時間枠選択 */}
       <section className={step === "time" ? "" : "hidden"}>
         {loading ? (
-          <p className="text-zinc-500 text-sm">読み込み中...</p>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-5 w-40 rounded bg-zinc-200" />
+            <div className="h-4 w-64 rounded bg-zinc-200" />
+            <div className="h-12 rounded-lg bg-zinc-200" />
+            <div className="flex justify-center gap-4 mt-2">
+              <div className="h-3 w-10 rounded bg-zinc-200" />
+              <div className="h-3 w-10 rounded bg-zinc-200" />
+              <div className="h-3 w-10 rounded bg-zinc-200" />
+              <div className="h-3 w-10 rounded bg-zinc-200" />
+            </div>
+          </div>
         ) : pricingType === "daily" ? (
           /* 平日: スライダーバーでブロック選択 */
           <div>
