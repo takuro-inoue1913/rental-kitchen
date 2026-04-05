@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
 
 type Props = {
   href: string;
@@ -11,6 +12,12 @@ type Props = {
 
 export function LoadingLink({ href, className = "", children }: Props) {
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+
+  // ルート変更でリセット
+  useEffect(() => {
+    setLoading(false);
+  }, [pathname]);
 
   const handleClick = useCallback(() => {
     setLoading(true);

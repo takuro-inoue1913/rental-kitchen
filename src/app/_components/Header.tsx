@@ -25,12 +25,14 @@ export function Header() {
         >
           {SITE_NAME}
         </Link>
-        <LoadingLink
-          href="/reserve"
-          className="h-9 rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
-        >
-          予約する
-        </LoadingLink>
+        {!pathname.startsWith("/reserve") && (
+          <LoadingLink
+            href="/reserve"
+            className="h-9 rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
+          >
+            予約する
+          </LoadingLink>
+        )}
       </div>
     </header>
   );
