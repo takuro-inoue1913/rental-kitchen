@@ -1,41 +1,109 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+
+const GALLERY_IMAGES = [
+  { src: "/images/kitchen-counter.jpg", alt: "キッチンカウンター" },
+  { src: "/images/dining-projector.jpeg", alt: "ダイニング＆プロジェクター" },
+  { src: "/images/lounge.jpeg", alt: "ラウンジスペース" },
+  { src: "/images/theater.jpeg", alt: "シアタースペース" },
+  { src: "/images/kitchen-wide.jpeg", alt: "キッチン全景" },
+  { src: "/images/space-full.jpeg", alt: "スペース全体" },
+  { src: "/images/whiteboard.jpeg", alt: "ホワイトボード＆会議" },
+  { src: "/images/space-overview.jpeg", alt: "スペース俯瞰" },
+];
 
 export default function Home() {
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
-      <section className="flex flex-col items-center justify-center gap-6 px-6 py-24 bg-gradient-to-b from-amber-50 to-white text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-          {SITE_NAME}
-        </h1>
-        <p className="max-w-lg text-lg text-zinc-600">{SITE_DESCRIPTION}</p>
-        <Link
-          href="/reserve"
-          className="mt-4 inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
-        >
-          予約する
-        </Link>
+      <section className="relative h-[480px] sm:h-[560px]">
+        <Image
+          src="/images/hero.jpeg"
+          alt="kitchen神田TYD"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            {SITE_NAME}
+          </h1>
+          <p className="max-w-lg text-lg text-white/90">{SITE_DESCRIPTION}</p>
+          <Link
+            href="/reserve"
+            className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-amber-500 px-8 text-white font-medium transition-colors hover:bg-amber-600"
+          >
+            予約する
+          </Link>
+        </div>
+      </section>
+
+      {/* ギャラリー */}
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
+          スペース紹介
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {GALLERY_IMAGES.map((img) => (
+            <div
+              key={img.src}
+              className="relative aspect-[4/3] overflow-hidden rounded-lg"
+            >
+              <Image
+                src={img.src}
+                alt={img.alt}
+                fill
+                className="object-cover transition-transform hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+              />
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* 特徴 */}
+      <section className="bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-10">
+            スペースの特徴
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-3">
+            <Feature
+              title="本格キッチン設備"
+              description="広々としたキッチンカウンター・調理設備を完備。料理教室やパーティーに最適です。"
+            />
+            <Feature
+              title="プロジェクター＆大画面"
+              description="大型スクリーン・プロジェクター完備。セミナーや上映会にもご利用いただけます。"
+            />
+            <Feature
+              title="柔軟な時間帯"
+              description="1時間単位で予約可能。朝の仕込みから夜のイベントまで、お好きな時間にご利用いただけます。"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 設備 */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-10">
-          スペースの特徴
+        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
+          設備・備品
         </h2>
-        <div className="grid gap-8 sm:grid-cols-3">
-          <Feature
-            title="本格キッチン設備"
-            description="業務用コンロ・オーブン・大型冷蔵庫を完備。料理教室やケータリング準備に最適です。"
-          />
-          <Feature
-            title="好立地"
-            description="神田駅から徒歩圏内。アクセス抜群の立地で、お客様の集客にも便利です。"
-          />
-          <Feature
-            title="柔軟な時間帯"
-            description="1時間単位で予約可能。朝の仕込みから夜のイベントまで、お好きな時間にご利用いただけます。"
-          />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm text-zinc-700">
+          <EquipmentItem label="キッチンカウンター" />
+          <EquipmentItem label="冷蔵庫" />
+          <EquipmentItem label="電子レンジ" />
+          <EquipmentItem label="トースター" />
+          <EquipmentItem label="コーヒーメーカー" />
+          <EquipmentItem label="大型テーブル（12名）" />
+          <EquipmentItem label="ソファ席" />
+          <EquipmentItem label="プロジェクター" />
+          <EquipmentItem label="大型スクリーン" />
+          <EquipmentItem label="ホワイトボード" />
+          <EquipmentItem label="Wi-Fi" />
+          <EquipmentItem label="エアコン" />
         </div>
       </section>
 
@@ -44,7 +112,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-2xl font-bold text-zinc-900 mb-4">料金</h2>
           <p className="text-zinc-600 mb-8">
-            1時間単位でご利用いただけます。料金は時間帯・曜日により異なります。
+            1時間単位でご利用いただけます。料金は曜日により異なります。
           </p>
           <div className="inline-flex gap-8">
             <PriceCard label="平日" price="3,000" unit="円/時間" />
@@ -53,8 +121,19 @@ export default function Home() {
         </div>
       </section>
 
+      {/* アクセス */}
+      <section className="mx-auto max-w-4xl px-6 py-16 text-center">
+        <h2 className="text-2xl font-bold text-zinc-900 mb-4">アクセス</h2>
+        <p className="text-zinc-600">
+          東京都千代田区 神田エリア
+        </p>
+        <p className="text-sm text-zinc-500 mt-1">
+          ※ 詳細な住所は予約確定後にお知らせします
+        </p>
+      </section>
+
       {/* CTA */}
-      <section className="flex flex-col items-center gap-4 px-6 py-16 text-center">
+      <section className="flex flex-col items-center gap-4 bg-amber-50 px-6 py-16 text-center">
         <h2 className="text-2xl font-bold text-zinc-900">
           まずは空き状況をチェック
         </h2>
@@ -85,6 +164,15 @@ function Feature({
     <div className="text-center">
       <h3 className="text-lg font-semibold text-zinc-900 mb-2">{title}</h3>
       <p className="text-sm text-zinc-600">{description}</p>
+    </div>
+  );
+}
+
+function EquipmentItem({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
+      <span className="text-amber-600">&#10003;</span>
+      <span>{label}</span>
     </div>
   );
 }
