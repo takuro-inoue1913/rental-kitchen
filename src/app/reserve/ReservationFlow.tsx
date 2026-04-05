@@ -112,7 +112,9 @@ export function ReservationFlow({ options }: Props) {
               利用時間を選択
             </h2>
             <p className="text-sm text-zinc-600 mb-4">
-              ¥{(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし
+              {selectedRangeCount > 0
+                ? `${selectedRangeCount}枠 × ¥${(dailyPrice ?? 0).toLocaleString()} = ¥${basePrice.toLocaleString()} 税込`
+                : `1枠 ¥${(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし`}
             </p>
             <TimeRangeSlider
               slots={slots}
