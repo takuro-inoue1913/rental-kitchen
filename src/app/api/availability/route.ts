@@ -5,7 +5,6 @@ import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
 
 type AvailabilityRule = Database["public"]["Tables"]["availability_rules"]["Row"];
-type Reservation = Pick<Database["public"]["Tables"]["reservations"]["Row"], "start_time" | "end_time">;
 
 export type TimeSlot = {
   startTime: string;
@@ -87,30 +86,16 @@ export async function GET(request: NextRequest) {
   const rule = rules[0];
   const pricingType = rule.pricing_type as PricingType;
 
-  // Supabase の予約と Google カレンダーのイベントを並行取得
-  const [{ data: reservations }, calendarEvents] = await Promise.all([
-    supabase
-      .from("reservations")
-      .select("start_time, end_time")
-      .eq("date", dateParam)
-      .in("status", ["pending", "confirmed"])
-      .returns<Reservation[]>(),
-    getCalendarEvents(dateParam),
-  ]);
+  // Google カレンダーのイベントのみで空き判定
+  // TODO: Phase 6 で双方向同期実装後、Supabase の reservations も含める
+  const calendarEvents = await getCalendarEvents(dateParam);
 
-  // 予約済み時間帯を統合（DB + Google カレンダー）
-  const bookedRanges = [
-    ...(reservations ?? []).map((r) => ({
-      start: r.start_time,
-      end: r.end_time,
-    })),
-    ...calendarEvents
-      .filter((e) => !e.isAllDay)
-      .map((e) => ({
-        start: e.startTime,
-        end: e.endTime,
-      })),
-  ];
+  const bookedRanges = calendarEvents
+    .filter((e) => !e.isAllDay)
+    .map((e) => ({
+      start: e.startTime,
+      end: e.endTime,
+    }));
 
   const hasAllDayEvent = calendarEvents.some((e) => e.isAllDay);
 

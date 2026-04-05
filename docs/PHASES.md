@@ -91,6 +91,14 @@
 - 予約ステータスライフサイクル: pending → confirmed → completed / cancelled
 - pg_cron で古い pending の自動キャンセル（30分）
 
+### 暫定対応: 空き判定を Google カレンダーのみに
+- 現在、空き枠 API (`GET /api/availability`) は **Google カレンダーのみ** で空き判定している
+- Supabase の `reservations` テーブルは空き判定に使用していない
+- **理由**: システムで予約 → Supabase に保存されるが、Google カレンダーには未反映のため不整合が発生する
+- **Phase 6 で対応すること**:
+  1. 決済完了時に Google カレンダーにイベントを自動作成（システム → Google）
+  2. その後、空き判定に Supabase の reservations も含める（両方のソースを統合）
+
 ## Phase 4: 認証画面・マイページ
 
 **ブランチ**: `phase4/auth-mypage`
