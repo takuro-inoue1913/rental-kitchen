@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ReservationFlow } from "./ReservationFlow";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "予約",
 };
