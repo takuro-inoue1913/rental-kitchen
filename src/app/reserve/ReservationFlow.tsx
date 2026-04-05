@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { format } from "date-fns";
 import { DatePicker } from "@/app/_components/DatePicker";
-import { TimeSlotGrid } from "@/app/_components/TimeSlotGrid";
+import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
 import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
@@ -57,20 +57,8 @@ export function ReservationFlow({ options }: Props) {
     [fetchSlots]
   );
 
-  const handleSlotToggle = useCallback((slot: TimeSlot) => {
-    setSelectedSlots((prev) => {
-      const exists = prev.some(
-        (s) => s.startTime === slot.startTime && s.endTime === slot.endTime
-      );
-      if (exists) {
-        return prev.filter(
-          (s) => !(s.startTime === slot.startTime && s.endTime === slot.endTime)
-        );
-      }
-      return [...prev, slot].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime)
-      );
-    });
+  const handleSlotSelect = useCallback((selected: TimeSlot[]) => {
+    setSelectedSlots(selected);
   }, []);
 
   const handleOptionToggle = useCallback((optionId: string) => {
@@ -117,12 +105,12 @@ export function ReservationFlow({ options }: Props) {
         {loading ? (
           <p className="text-zinc-500 text-sm">読み込み中...</p>
         ) : pricingType === "daily" ? (
-          /* 平日: 丸一日プラン + 空き時間表示 */
+          /* 平日: 丸一日プラン */
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 mb-2">
               丸一日プラン
             </h2>
-            <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-4 text-center mb-4">
+            <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-4 text-center mb-6">
               <p className="text-2xl font-bold text-amber-600">
                 ¥{(dailyPrice ?? 0).toLocaleString()}
                 <span className="text-sm font-normal text-zinc-500 ml-1">
@@ -131,31 +119,23 @@ export function ReservationFlow({ options }: Props) {
               </p>
               <p className="text-xs text-zinc-500 mt-1">人数制限なし・空き時間のみ利用可</p>
             </div>
-            <p className="text-sm text-zinc-600 mb-3">
-              予約済みの時間帯はグレー表示されます
-            </p>
-            <TimeSlotGrid
+            <TimeRangeSlider
               slots={slots}
               selectedSlots={selectedSlots}
-              onToggle={() => {}}
+              onSelect={handleSlotSelect}
               disabled
             />
-            {selectedSlots.length === 0 && (
-              <p className="text-sm text-red-500 mt-3">
-                この日は全時間帯が予約済みです
-              </p>
-            )}
           </div>
         ) : (
-          /* 土日祝: 時間枠選択 */
+          /* 土日祝: 時間帯選択 */
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-              時間枠を選択
+              利用時間を選択
             </h2>
-            <TimeSlotGrid
+            <TimeRangeSlider
               slots={slots}
               selectedSlots={selectedSlots}
-              onToggle={handleSlotToggle}
+              onSelect={handleSlotSelect}
             />
           </div>
         )}
