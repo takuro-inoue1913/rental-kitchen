@@ -1,6 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function createRedirectResponse(
+  request: NextRequest,
+  supabaseResponse: NextResponse,
+  pathname: string
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  if (pathname === "/auth/login") {
+    url.searchParams.set(
+      "redirect",
+      request.nextUrl.pathname + request.nextUrl.search
+    );
+  }
+  const redirectResponse = NextResponse.redirect(url);
+  // Cookie 更新をリダイレクトレスポンスに引き継ぐ
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie.name, cookie.value);
+  });
+  return redirectResponse;
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -33,20 +54,24 @@ export async function updateSession(request: NextRequest) {
   // 管理画面へのアクセス制御
   if (request.nextUrl.pathname.startsWith("/admin")) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      url.searchParams.set("redirect", request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      return createRedirectResponse(request, supabaseResponse, "/auth/login");
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.is_admin) {
+      return createRedirectResponse(request, supabaseResponse, "/");
     }
   }
 
   // マイページへのアクセス制御
   if (request.nextUrl.pathname.startsWith("/my")) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      url.searchParams.set("redirect", request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      return createRedirectResponse(request, supabaseResponse, "/auth/login");
     }
   }
 
