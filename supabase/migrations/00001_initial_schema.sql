@@ -131,9 +131,12 @@ CREATE POLICY "Users can view own reservations"
   ON public.reservations FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can insert reservations"
+-- 会員予約: 認証済みユーザーは自分の user_id でのみ挿入可能
+-- ゲスト予約: service_role 経由（サーバーサイド）でのみ挿入される
+CREATE POLICY "Authenticated users can insert own reservations"
   ON public.reservations FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 
 -- 6. reservation_options テーブル（予約×オプション中間テーブル）
