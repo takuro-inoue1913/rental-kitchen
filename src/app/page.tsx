@@ -33,21 +33,25 @@ export default function Home() {
         </div>
       </HeroSlider>
 
-      {/* ギャラリー */}
-      <section className="px-3 py-16 sm:px-4">
-        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
-          スペース紹介
-        </h2>
-        <Gallery images={GALLERY_IMAGES} />
+      {/* 料金 */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>料金</SectionHeading>
+          <p className="text-zinc-600 text-center mb-10 text-lg">
+            人数制限なし。料金は曜日により異なります。
+          </p>
+          <div className="flex justify-center gap-6 flex-wrap">
+            <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
+            <PriceCard label="土日祝" price="2,800" unit="円/時間（税込）" sub="1時間単位" />
+          </div>
+        </div>
       </section>
 
       {/* スペース情報 */}
-      <section className="bg-zinc-50 px-6 py-16">
+      <section className="bg-zinc-50 px-6 py-20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-4">
-            スペースについて
-          </h2>
-          <p className="text-zinc-600 text-center mb-10 max-w-2xl mx-auto">
+          <SectionHeading>スペースについて</SectionHeading>
+          <p className="text-zinc-600 text-center mb-10 max-w-2xl mx-auto text-lg">
             「家以上、店未満」をコンセプトとした完全装備のレンタルキッチン。
             飲食店営業許可・菓子製造業許可・惣菜製造業許可を取得済み。
             24時間利用可能で、毎日清掃を行い清潔な環境を維持しています。
@@ -61,34 +65,38 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ギャラリー */}
+      <section className="px-3 py-20 sm:px-4">
+        <SectionHeading>スペース紹介</SectionHeading>
+        <Gallery images={GALLERY_IMAGES} />
+      </section>
+
       {/* 利用用途 */}
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
-          こんな用途に
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          <UsageTag label="料理教室" />
-          <UsageTag label="動画撮影" />
-          <UsageTag label="商品撮影" />
-          <UsageTag label="女子会・ママ会" />
-          <UsageTag label="誕生日会" />
-          <UsageTag label="セミナー・勉強会" />
-          <UsageTag label="飲食店運営" />
-          <UsageTag label="間借りカフェ" />
-          <UsageTag label="キッチンカーの仕込み" />
-          <UsageTag label="パーティー" />
-          <UsageTag label="上映会" />
-          <UsageTag label="ワークショップ" />
+      <section className="bg-zinc-50 px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading>こんな用途に</SectionHeading>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <UsageTag label="料理教室" />
+            <UsageTag label="動画撮影" />
+            <UsageTag label="商品撮影" />
+            <UsageTag label="女子会・ママ会" />
+            <UsageTag label="誕生日会" />
+            <UsageTag label="セミナー・勉強会" />
+            <UsageTag label="飲食店運営" />
+            <UsageTag label="間借りカフェ" />
+            <UsageTag label="キッチンカーの仕込み" />
+            <UsageTag label="パーティー" />
+            <UsageTag label="上映会" />
+            <UsageTag label="ワークショップ" />
+          </div>
         </div>
       </section>
 
       {/* 設備・備品 */}
-      <section className="bg-zinc-50 px-6 py-16">
+      <section className="px-6 py-20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
-            設備・備品
-          </h2>
-          <div className="space-y-6">
+          <SectionHeading>設備・備品</SectionHeading>
+          <div className="space-y-8">
             <EquipmentCategory
               title="キッチン"
               items={[
@@ -133,32 +141,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 料金 */}
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-4">
-          料金
-        </h2>
-        <p className="text-zinc-600 text-center mb-8">
-          人数制限なし。料金は曜日により異なります。
-        </p>
-        <div className="flex justify-center gap-6 flex-wrap">
-          <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
-          <PriceCard label="土日祝" price="2,800" unit="円/時間（税込）" sub="1時間単位" />
-        </div>
-      </section>
-
       {/* アクセス */}
-      <section className="bg-zinc-50 px-6 py-16">
+      <section className="bg-zinc-50 px-6 py-20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-6">
-            アクセス
-          </h2>
+          <SectionHeading>アクセス</SectionHeading>
           <div className="grid gap-8 md:grid-cols-2 items-start">
             <div className="text-center md:text-left">
-              <p className="text-zinc-700 font-medium">
+              <p className="text-zinc-700 font-medium text-lg">
                 〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
               </p>
-              <div className="mt-4 space-y-1 text-sm text-zinc-600">
+              <div className="mt-4 space-y-2 text-zinc-600">
                 <p>JR山手線 神田駅 徒歩5分</p>
                 <p>東京メトロ東西線 大手町駅 徒歩6分</p>
                 <p>都営新宿線 小川町駅 徒歩6分</p>
@@ -182,8 +174,8 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="flex flex-col items-center gap-4 bg-amber-50 px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold text-zinc-900">
+      <section className="flex flex-col items-center gap-4 bg-amber-50 px-6 py-20 text-center">
+        <h2 className="text-3xl font-bold text-zinc-900">
           まずは空き状況をチェック
         </h2>
         <Link
@@ -199,6 +191,14 @@ export default function Home() {
         <p>&copy; 2026 {SITE_NAME}. All rights reserved.</p>
       </footer>
     </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-3xl font-bold text-center mb-10 tracking-tight text-amber-700">
+      {children}
+    </h2>
   );
 }
 
@@ -237,7 +237,7 @@ function EquipmentCategory({
 }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-zinc-900 mb-3">{title}</h3>
+      <h3 className="text-base font-semibold text-zinc-900 mb-3">{title}</h3>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <span
@@ -265,10 +265,10 @@ function PriceCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white px-8 py-6">
+    <div className="rounded-xl border border-zinc-200 bg-white px-10 py-8">
       <p className="text-sm text-zinc-500 mb-1">{label}</p>
-      <p className="text-3xl font-bold text-zinc-900">{price}</p>
-      <p className="text-sm text-zinc-500">{unit}</p>
+      <p className="text-4xl font-bold text-zinc-900">{price}</p>
+      <p className="text-sm text-zinc-500 mt-1">{unit}</p>
       {sub && <p className="text-xs text-amber-600 mt-2">{sub}</p>}
     </div>
   );
