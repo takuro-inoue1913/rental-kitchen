@@ -115,13 +115,15 @@ CREATE TABLE public.reservations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT valid_reservation_time CHECK (start_time < end_time),
-  CONSTRAINT guest_or_user CHECK (user_id IS NOT NULL OR guest_email IS NOT NULL)
+  CONSTRAINT guest_or_user CHECK (user_id IS NOT NULL OR guest_email IS NOT NULL),
+  CONSTRAINT no_overlapping_reservations EXCLUDE USING GIST (
+    tsrange(
+      (date + start_time)::timestamp,
+      (date + end_time)::timestamp,
+      '[)'
+    ) WITH &&
+  ) WHERE (status IN ('pending', 'confirmed'))
 );
-
--- 同一日時の確定済み予約の重複防止インデックス
-CREATE UNIQUE INDEX idx_no_double_booking
-  ON public.reservations (date, start_time)
-  WHERE status IN ('pending', 'confirmed');
 
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
 
