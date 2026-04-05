@@ -4,14 +4,14 @@ import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { HeroSlider } from "@/app/_components/HeroSlider";
 
 const GALLERY_IMAGES = [
-  { src: "/images/kitchen-counter.jpg", alt: "キッチンカウンター" },
-  { src: "/images/dining-projector.jpeg", alt: "ダイニング＆プロジェクター" },
-  { src: "/images/lounge.jpeg", alt: "ラウンジスペース" },
-  { src: "/images/theater.jpeg", alt: "シアタースペース" },
-  { src: "/images/kitchen-wide.jpeg", alt: "キッチン全景" },
-  { src: "/images/space-full.jpeg", alt: "スペース全体" },
-  { src: "/images/whiteboard.jpeg", alt: "ホワイトボード＆会議" },
-  { src: "/images/space-overview.jpeg", alt: "スペース俯瞰" },
+  { src: "/images/kitchen-angle.jpeg", alt: "キッチン設備" },
+  { src: "/images/dining-table.jpeg", alt: "ダイニングテーブル" },
+  { src: "/images/whiteboard.jpeg", alt: "ホワイトボード" },
+  { src: "/images/sofa.jpeg", alt: "ソファスペース" },
+  { src: "/images/meeting.jpeg", alt: "会議スペース" },
+  { src: "/images/space-long.jpeg", alt: "スペース全景" },
+  { src: "/images/space-back.jpeg", alt: "キッチン＆カウンター" },
+  { src: "/images/space-side.jpeg", alt: "ダイニング＆ラウンジ" },
 ];
 
 export default function Home() {
