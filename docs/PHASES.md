@@ -16,7 +16,8 @@
 ## Phase 1: Supabase 基盤・DB 設計・認証ミドルウェア
 
 **ブランチ**: `phase1/supabase-foundation`
-**PR**: #1
+**PR**: #1 (merged 2026-04-05)
+**ステータス**: 完了
 
 ### 内容
 - Supabase クライアント設定（browser / server / admin の3種）

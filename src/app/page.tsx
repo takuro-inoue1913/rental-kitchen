@@ -1,65 +1,108 @@
-import Image from "next/image";
+import Link from "next/link";
+import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex flex-col flex-1">
+      {/* ヒーロー */}
+      <section className="flex flex-col items-center justify-center gap-6 px-6 py-24 bg-gradient-to-b from-amber-50 to-white text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+          {SITE_NAME}
+        </h1>
+        <p className="max-w-lg text-lg text-zinc-600">{SITE_DESCRIPTION}</p>
+        <Link
+          href="/reserve"
+          className="mt-4 inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
+        >
+          予約する
+        </Link>
+      </section>
+
+      {/* 特徴 */}
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <h2 className="text-2xl font-bold text-zinc-900 text-center mb-10">
+          スペースの特徴
+        </h2>
+        <div className="grid gap-8 sm:grid-cols-3">
+          <Feature
+            title="本格キッチン設備"
+            description="業務用コンロ・オーブン・大型冷蔵庫を完備。料理教室やケータリング準備に最適です。"
+          />
+          <Feature
+            title="好立地"
+            description="神田駅から徒歩圏内。アクセス抜群の立地で、お客様の集客にも便利です。"
+          />
+          <Feature
+            title="柔軟な時間帯"
+            description="1時間単位で予約可能。朝の仕込みから夜のイベントまで、お好きな時間にご利用いただけます。"
+          />
+        </div>
+      </section>
+
+      {/* 料金 */}
+      <section className="bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-2xl font-bold text-zinc-900 mb-4">料金</h2>
+          <p className="text-zinc-600 mb-8">
+            1時間単位でご利用いただけます。料金は時間帯・曜日により異なります。
           </p>
+          <div className="inline-flex gap-8">
+            <PriceCard label="平日" price="3,000" unit="円/時間" />
+            <PriceCard label="土日祝" price="4,000" unit="円/時間" />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
+
+      {/* CTA */}
+      <section className="flex flex-col items-center gap-4 px-6 py-16 text-center">
+        <h2 className="text-2xl font-bold text-zinc-900">
+          まずは空き状況をチェック
+        </h2>
+        <Link
+          href="/reserve"
+          className="inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
+        >
+          空き状況を確認して予約する
+        </Link>
+      </section>
+
+      {/* フッター */}
+      <footer className="border-t border-zinc-200 px-6 py-8 text-center text-sm text-zinc-500">
+        <p>&copy; 2026 {SITE_NAME}. All rights reserved.</p>
+      </footer>
+    </div>
+  );
+}
+
+function Feature({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="text-center">
+      <h3 className="text-lg font-semibold text-zinc-900 mb-2">{title}</h3>
+      <p className="text-sm text-zinc-600">{description}</p>
+    </div>
+  );
+}
+
+function PriceCard({
+  label,
+  price,
+  unit,
+}: {
+  label: string;
+  price: string;
+  unit: string;
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white px-8 py-6">
+      <p className="text-sm text-zinc-500 mb-1">{label}</p>
+      <p className="text-3xl font-bold text-zinc-900">{price}</p>
+      <p className="text-sm text-zinc-500">{unit}</p>
     </div>
   );
 }
