@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:types": "supabase gen types typescript --project-id csqpuhuseisvzjgmlecl > src/lib/database.types.ts"
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.0.1",
