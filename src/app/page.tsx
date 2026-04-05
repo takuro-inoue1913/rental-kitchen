@@ -42,7 +42,7 @@ export default function Home() {
           </p>
           <div className="flex justify-center gap-6 flex-wrap">
             <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
-            <PriceCard label="土日祝" price="2,800" unit="円/時間（税込）" sub="1時間単位" />
+            <PriceCard label="土日祝" price="2,500" unit="円/時間（税込）" sub="1時間単位" />
           </div>
         </div>
       </section>
