@@ -82,16 +82,31 @@ export default async function ConfirmationPage({
     { locale: ja }
   );
 
+  const isConfirmed = reservation.status === "confirmed";
+  const isPending = reservation.status === "pending";
+
   return (
     <div className="flex flex-col flex-1 bg-zinc-50">
       <div className="mx-auto w-full max-w-lg px-4 py-16 text-center">
-        <div className="text-5xl mb-4">&#10003;</div>
+        <div className="text-5xl mb-4">{isConfirmed ? "\u2713" : "\u23F3"}</div>
         <h1 className="text-2xl font-bold text-zinc-900 mb-2">
-          予約が確定しました
+          {isConfirmed
+            ? "予約が確定しました"
+            : isPending
+              ? "予約を確認しています"
+              : "予約を受け付けました"}
         </h1>
-        <p className="text-zinc-600 mb-8">
-          確認メールを {reservation.guest_email} に送信しました
+        <p className="text-zinc-600 mb-3">
+          {isConfirmed
+            ? `予約確認は ${reservation.guest_email} をご確認ください`
+            : `決済確認後、${reservation.guest_email} にご案内をお送りします`}
         </p>
+        {isPending && (
+          <p className="text-sm text-zinc-500 mb-8">
+            決済の反映まで少々お時間がかかる場合があります
+          </p>
+        )}
+        {!isPending && <div className="mb-8" />}
 
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-left">
           <dl className="space-y-3 text-sm">
