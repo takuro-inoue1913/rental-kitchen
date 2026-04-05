@@ -6,7 +6,7 @@ import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
-import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
+import type { TimeSlot, TimeBlock, AvailabilityResponse } from "@/app/api/availability/route";
 import type { Database, PricingType } from "@/lib/types";
 
 type Option = Database["public"]["Tables"]["options"]["Row"];
@@ -23,6 +23,8 @@ export function ReservationFlow({ options }: Props) {
   const [pricingType, setPricingType] = useState<PricingType>("hourly");
   const [dailyPrice, setDailyPrice] = useState<number | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [blocks, setBlocks] = useState<TimeBlock[]>([]);
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,12 +38,9 @@ export function ReservationFlow({ options }: Props) {
       setPricingType(data.pricingType);
       setDailyPrice(data.dailyPrice);
       setSlots(data.slots);
-
-      // daily の場合は空いている枠を自動選択
-      if (data.pricingType === "daily") {
-        const availableSlots = data.slots.filter((s) => s.available);
-        setSelectedSlots(availableSlots);
-      }
+      setBlocks(data.blocks);
+      setSelectedBlockIndex(null);
+      setSelectedSlots([]);
     } finally {
       setLoading(false);
     }
@@ -69,10 +68,25 @@ export function ReservationFlow({ options }: Props) {
     );
   }, []);
 
+  const handleBlockSelect = useCallback(
+    (index: number) => {
+      setSelectedBlockIndex(index);
+      const block = blocks[index];
+      // ブロックに対応するスロットを選択状態にする
+      const blockSlots = slots.filter(
+        (s) => s.startTime >= block.startTime && s.endTime <= block.endTime && s.available
+      );
+      setSelectedSlots(blockSlots);
+    },
+    [blocks, slots]
+  );
+
   const basePrice =
-    pricingType === "daily"
-      ? (dailyPrice ?? 0)
-      : selectedSlots.reduce((sum, s) => sum + s.price, 0);
+    pricingType === "daily" && selectedBlockIndex !== null
+      ? blocks[selectedBlockIndex].price
+      : pricingType === "daily"
+        ? 0
+        : selectedSlots.reduce((sum, s) => sum + s.price, 0);
 
   const totalPrice =
     basePrice +
@@ -80,7 +94,8 @@ export function ReservationFlow({ options }: Props) {
       .filter((o) => selectedOptionIds.includes(o.id))
       .reduce((sum, o) => sum + o.price, 0);
 
-  const hasAvailableSlots = selectedSlots.length > 0;
+  const canProceed =
+    pricingType === "daily" ? selectedBlockIndex !== null : selectedSlots.length > 0;
 
   return (
     <div className="space-y-8">
@@ -105,26 +120,48 @@ export function ReservationFlow({ options }: Props) {
         {loading ? (
           <p className="text-zinc-500 text-sm">読み込み中...</p>
         ) : pricingType === "daily" ? (
-          /* 平日: 丸一日プラン */
+          /* 平日: ブロック選択 */
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 mb-2">
-              丸一日プラン
+            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+              利用枠を選択
             </h2>
-            <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-4 text-center mb-6">
-              <p className="text-2xl font-bold text-amber-600">
-                ¥{(dailyPrice ?? 0).toLocaleString()}
-                <span className="text-sm font-normal text-zinc-500 ml-1">
-                  /日（税込）
-                </span>
-              </p>
-              <p className="text-xs text-zinc-500 mt-1">人数制限なし・空き時間のみ利用可</p>
-            </div>
-            <TimeRangeSlider
-              slots={slots}
-              selectedSlots={selectedSlots}
-              onSelect={handleSlotSelect}
-              disabled
-            />
+            {blocks.length === 0 ? (
+              <div className="rounded-lg border border-zinc-200 bg-zinc-100 p-6 text-center">
+                <p className="text-zinc-500">この日は全時間帯が予約済みです</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-600">
+                  空いている時間帯を選択してください（1枠 ¥{(dailyPrice ?? 0).toLocaleString()} 税込）
+                </p>
+                {blocks.map((block, i) => (
+                  <button
+                    key={block.startTime}
+                    type="button"
+                    onClick={() => handleBlockSelect(i)}
+                    className={`w-full rounded-lg border-2 p-5 text-left transition-colors ${
+                      selectedBlockIndex === i
+                        ? "border-amber-600 bg-amber-50"
+                        : "border-zinc-200 bg-white hover:border-amber-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-lg font-semibold text-zinc-900">
+                          {block.startTime} - {block.endTime}
+                        </p>
+                        <p className="text-sm text-zinc-500 mt-1">
+                          人数制限なし
+                        </p>
+                      </div>
+                      <p className="text-xl font-bold text-amber-600">
+                        ¥{block.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           /* 土日祝: 時間帯選択 */
@@ -149,7 +186,7 @@ export function ReservationFlow({ options }: Props) {
           </button>
           <button
             type="button"
-            disabled={!hasAvailableSlots}
+            disabled={!canProceed}
             onClick={() => setStep("options")}
             className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >

@@ -13,11 +13,18 @@ export type TimeSlot = {
   available: boolean;
 };
 
+export type TimeBlock = {
+  startTime: string;
+  endTime: string;
+  price: number;
+};
+
 export type AvailabilityResponse = {
   date: string;
   pricingType: PricingType;
   dailyPrice: number | null;
   slots: TimeSlot[];
+  blocks: TimeBlock[];
 };
 
 /**
@@ -51,6 +58,7 @@ export async function GET(request: NextRequest) {
       pricingType: "hourly",
       dailyPrice: null,
       slots: [],
+      blocks: [],
     });
   }
 
@@ -71,6 +79,7 @@ export async function GET(request: NextRequest) {
       pricingType: "hourly",
       dailyPrice: null,
       slots: [],
+      blocks: [],
     });
   }
 
@@ -131,11 +140,46 @@ export async function GET(request: NextRequest) {
 
   slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
+  // daily の場合: 連続する空き枠をブロックにまとめる
+  const blocks: TimeBlock[] = [];
+  if (pricingType === "daily") {
+    let blockStart: string | null = null;
+    let blockEnd: string | null = null;
+
+    for (const slot of slots) {
+      if (slot.available) {
+        if (blockStart === null) {
+          blockStart = slot.startTime;
+        }
+        blockEnd = slot.endTime;
+      } else {
+        if (blockStart !== null && blockEnd !== null) {
+          blocks.push({
+            startTime: blockStart,
+            endTime: blockEnd,
+            price: rule.price_per_slot,
+          });
+          blockStart = null;
+          blockEnd = null;
+        }
+      }
+    }
+    // 最後のブロック
+    if (blockStart !== null && blockEnd !== null) {
+      blocks.push({
+        startTime: blockStart,
+        endTime: blockEnd,
+        price: rule.price_per_slot,
+      });
+    }
+  }
+
   return Response.json({
     date: dateParam,
     pricingType,
     dailyPrice: pricingType === "daily" ? rule.price_per_slot : null,
     slots,
+    blocks,
   } satisfies AvailabilityResponse);
 }
 
