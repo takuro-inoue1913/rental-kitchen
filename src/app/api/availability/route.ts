@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCalendarEvents } from "@/lib/google-calendar";
 import type { Database, PricingType } from "@/lib/types";
 import { NextRequest } from "next/server";
 
@@ -23,8 +24,7 @@ export type AvailabilityResponse = {
  * GET /api/availability?date=2026-04-10
  *
  * 指定日の空き枠を返す。
- * pricing_type が daily の場合は丸一日料金を返し、slots は空き確認用。
- * pricing_type が hourly の場合は時間枠ごとの料金を返す。
+ * Supabase の reservations + Google カレンダーの予約を突き合わせて判定。
  */
 export async function GET(request: NextRequest) {
   const dateParam = request.nextUrl.searchParams.get("date");
@@ -77,15 +77,35 @@ export async function GET(request: NextRequest) {
   const rule = rules[0];
   const pricingType = rule.pricing_type;
 
-  // 該当日の予約（pending/confirmed）を取得
-  const { data: reservations } = await supabase
-    .from("reservations")
-    .select("start_time, end_time")
-    .eq("date", dateParam)
-    .in("status", ["pending", "confirmed"])
-    .returns<Reservation[]>();
+  // Supabase の予約と Google カレンダーのイベントを並行取得
+  const [{ data: reservations }, calendarEvents] = await Promise.all([
+    supabase
+      .from("reservations")
+      .select("start_time, end_time")
+      .eq("date", dateParam)
+      .in("status", ["pending", "confirmed"])
+      .returns<Reservation[]>(),
+    getCalendarEvents(dateParam),
+  ]);
 
-  const hasBooking = (reservations ?? []).length > 0;
+  // 予約済み時間帯を統合（DB + Google カレンダー）
+  const bookedRanges = [
+    ...(reservations ?? []).map((r) => ({
+      start: r.start_time,
+      end: r.end_time,
+    })),
+    ...calendarEvents
+      .filter((e) => !e.isAllDay)
+      .map((e) => ({
+        start: e.startTime,
+        end: e.endTime,
+      })),
+  ];
+
+  const hasAllDayEvent = calendarEvents.some((e) => e.isAllDay);
+  const hasBooking =
+    (reservations ?? []).length > 0 ||
+    calendarEvents.length > 0;
 
   // daily の場合: 丸一日の空き状況を返す
   if (pricingType === "daily") {
@@ -105,11 +125,6 @@ export async function GET(request: NextRequest) {
   }
 
   // hourly の場合: 時間枠ごとの空き状況を返す
-  const bookedRanges = (reservations ?? []).map((r) => ({
-    start: r.start_time,
-    end: r.end_time,
-  }));
-
   const slots: TimeSlot[] = [];
   const startMinutes = timeToMinutes(rule.start_time);
   const endMinutes = timeToMinutes(rule.end_time);
@@ -119,10 +134,12 @@ export async function GET(request: NextRequest) {
     const slotStart = minutesToTime(m);
     const slotEnd = minutesToTime(m + duration);
 
-    const isBooked = bookedRanges.some(
-      (r) =>
-        timeToMinutes(r.start) < m + duration && timeToMinutes(r.end) > m
-    );
+    const isBooked =
+      hasAllDayEvent ||
+      bookedRanges.some(
+        (r) =>
+          timeToMinutes(r.start) < m + duration && timeToMinutes(r.end) > m
+      );
 
     slots.push({
       startTime: slotStart,
