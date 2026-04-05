@@ -20,7 +20,8 @@ CREATE POLICY "Users can view own profile"
 
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
-  USING (auth.uid() = id);
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
 -- Auth ユーザー作成時に profiles を自動作成するトリガー
 CREATE OR REPLACE FUNCTION public.handle_new_user()
