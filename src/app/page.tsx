@@ -35,7 +35,7 @@ export default function Home() {
 
       {/* ギャラリー */}
       {/* ギャラリー */}
-      <section className="mx-auto max-w-5xl px-6 py-16">
+      <section className="px-3 py-16 sm:px-4">
         <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
           スペース紹介
         </h2>
