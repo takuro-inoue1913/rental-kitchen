@@ -115,15 +115,13 @@ export function ReservationFlow({ options }: Props) {
           /* 平日: スライダーバーでブロック選択 */
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-              利用枠を選択
+              利用時間を選択
             </h2>
             <p className="text-sm text-zinc-600 mb-4">
-              空いている枠をクリックして選択（1枠 ¥{(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし）
+              ¥{(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし
             </p>
             <TimeRangeSlider
-              mode="block"
               slots={slots}
-              blocks={blocks}
               selectedSlots={selectedSlots}
               onSelect={handleSlotSelect}
             />
