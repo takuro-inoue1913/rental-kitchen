@@ -56,15 +56,32 @@ export function TimeRangeSlider({
     [slots, onSelect]
   );
 
-  const handleBarClick = useCallback(
-    (e: React.MouseEvent) => {
+  const handleBarPointerDown = useCallback(
+    (e: React.PointerEvent) => {
       if (disabled) return;
       const idx = getSlotIndexFromX(e.clientX);
       if (!slots[idx].available) return;
-      // 連続する空き枠の範囲を自動選択（クリックした位置から）
-      selectRange(idx, idx);
+
+      if (startIdx < 0) {
+        // 未選択 → 新規選択開始
+        selectRange(idx, idx);
+        setDragging("end");
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      } else {
+        // 既に選択あり → クリック位置に近いハンドルをドラッグ
+        const distToStart = Math.abs(idx - startIdx);
+        const distToEnd = Math.abs(idx - endIdx);
+        const handle = distToStart <= distToEnd ? "start" : "end";
+        if (handle === "start") {
+          selectRange(idx, endIdx);
+        } else {
+          selectRange(startIdx, idx);
+        }
+        setDragging(handle);
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      }
     },
-    [disabled, getSlotIndexFromX, slots, selectRange]
+    [disabled, getSlotIndexFromX, slots, startIdx, endIdx, selectRange]
   );
 
   const handlePointerDown = useCallback(
@@ -135,7 +152,7 @@ export function TimeRangeSlider({
         <div
           ref={barRef}
           className="relative h-12 rounded-lg overflow-hidden cursor-pointer"
-          onClick={handleBarClick}
+          onPointerDown={handleBarPointerDown}
         >
           {/* 各枠 */}
           <div className="flex h-full">
