@@ -179,16 +179,5 @@ CREATE TRIGGER set_reservations_updated_at
   EXECUTE FUNCTION public.update_updated_at();
 
 
--- 8. 初期データ: デフォルトの営業スケジュール（月-金 10:00-20:00, 1時間枠, ¥3,000）
-INSERT INTO public.availability_rules (day_of_week, start_time, end_time, slot_duration_minutes, price_per_slot) VALUES
-  (1, '10:00', '20:00', 60, 3000),  -- 月曜
-  (2, '10:00', '20:00', 60, 3000),  -- 火曜
-  (3, '10:00', '20:00', 60, 3000),  -- 水曜
-  (4, '10:00', '20:00', 60, 3000),  -- 木曜
-  (5, '10:00', '20:00', 60, 3000),  -- 金曜
-  (6, '10:00', '18:00', 60, 4000),  -- 土曜（割増）
-  (0, '10:00', '18:00', 60, 4000);  -- 日曜（割増）
-
--- 9. 初期データ: 清掃サービスオプション
-INSERT INTO public.options (name, description, price) VALUES
-  ('清掃サービス', '利用後の清掃を代行します。', 3000);
+-- 初期データ・営業スケジュール・既存予約は seed スクリプトで投入する
+-- （Google カレンダーから取得した予約データを含む）
