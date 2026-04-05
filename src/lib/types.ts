@@ -4,6 +4,8 @@ export type ReservationStatus =
   | "cancelled"
   | "completed";
 
+export type ReservationSource = "web" | "google_calendar" | "manual";
+
 export type Database = {
   public: {
     Tables: {
@@ -114,6 +116,8 @@ export type Database = {
           start_time: string;
           end_time: string;
           status: ReservationStatus;
+          source: ReservationSource;
+          google_event_id: string | null;
           base_price: number;
           total_price: number;
           stripe_checkout_session_id: string | null;
@@ -131,6 +135,8 @@ export type Database = {
           start_time: string;
           end_time: string;
           status?: ReservationStatus;
+          source?: ReservationSource;
+          google_event_id?: string | null;
           base_price: number;
           total_price: number;
           stripe_checkout_session_id?: string | null;
@@ -147,6 +153,8 @@ export type Database = {
           start_time?: string;
           end_time?: string;
           status?: ReservationStatus;
+          source?: ReservationSource;
+          google_event_id?: string | null;
           base_price?: number;
           total_price?: number;
           stripe_checkout_session_id?: string | null;

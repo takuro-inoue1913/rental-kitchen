@@ -109,13 +109,18 @@ CREATE TABLE public.reservations (
     CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed')),
   base_price INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
+  source TEXT NOT NULL DEFAULT 'web'
+    CHECK (source IN ('web', 'google_calendar', 'manual')),
+  google_event_id TEXT UNIQUE,
   stripe_checkout_session_id TEXT,
   stripe_payment_intent_id TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT valid_reservation_time CHECK (start_time < end_time),
-  CONSTRAINT guest_or_user CHECK (user_id IS NOT NULL OR guest_email IS NOT NULL),
+  CONSTRAINT guest_or_user_or_external CHECK (
+    user_id IS NOT NULL OR guest_email IS NOT NULL OR source != 'web'
+  ),
   CONSTRAINT no_overlapping_reservations EXCLUDE USING GIST (
     tsrange(
       (date + start_time)::timestamp,
