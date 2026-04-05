@@ -24,9 +24,10 @@ export function BookingSummary({
   options,
   selectedOptionIds,
 }: Props) {
+  const ranges = getTimeRanges(slots);
   const basePrice =
     pricingType === "daily"
-      ? (dailyPrice ?? 0)
+      ? ranges.length * (dailyPrice ?? 0)
       : slots.reduce((sum, s) => sum + s.price, 0);
   const selectedOptions = options.filter((o) =>
     selectedOptionIds.includes(o.id)
@@ -65,7 +66,9 @@ export function BookingSummary({
 
         <div className="flex justify-between">
           <dt className="text-zinc-500">
-            {pricingType === "daily" ? "丸一日プラン" : "スペース料金"}
+            {pricingType === "daily"
+              ? `丸一日プラン × ${ranges.length}枠`
+              : "スペース料金"}
           </dt>
           <dd className="text-zinc-900">¥{basePrice.toLocaleString()}</dd>
         </div>
