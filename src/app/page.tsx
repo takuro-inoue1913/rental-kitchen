@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { HeroSlider } from "@/app/_components/HeroSlider";
 import { Gallery } from "@/app/_components/Gallery";
+import { LoadingLink } from "@/app/_components/LoadingLink";
 
 const GALLERY_IMAGES = [
   { src: "/images/kitchen-angle.jpeg", alt: "キッチン設備" },
@@ -24,12 +24,12 @@ export default function Home() {
             {SITE_NAME}
           </h1>
           <p className="max-w-lg text-lg text-white/90">{SITE_DESCRIPTION}</p>
-          <Link
+          <LoadingLink
             href="/reserve"
             className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-amber-500 px-8 text-white font-medium transition-colors hover:bg-amber-600"
           >
             予約する
-          </Link>
+          </LoadingLink>
         </div>
       </HeroSlider>
 
@@ -178,12 +178,12 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-zinc-900">
           まずは空き状況をチェック
         </h2>
-        <Link
+        <LoadingLink
           href="/reserve"
           className="inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
         >
           空き状況を確認して予約する
-        </Link>
+        </LoadingLink>
       </section>
 
       {/* フッター */}
