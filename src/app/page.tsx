@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { HeroSlider } from "@/app/_components/HeroSlider";
 
 const GALLERY_IMAGES = [
   { src: "/images/kitchen-counter.jpg", alt: "キッチンカウンター" },
@@ -17,16 +18,8 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
-      <section className="relative h-[480px] sm:h-[560px]">
-        <Image
-          src="/images/hero.jpeg"
-          alt="kitchen神田TYD"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 text-center">
+      <HeroSlider>
+        <div className="flex flex-col items-center gap-5 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
             {SITE_NAME}
           </h1>
@@ -38,7 +31,7 @@ export default function Home() {
             予約する
           </Link>
         </div>
-      </section>
+      </HeroSlider>
 
       {/* ギャラリー */}
       <section className="mx-auto max-w-5xl px-6 py-16">
