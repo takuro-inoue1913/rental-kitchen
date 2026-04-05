@@ -2,6 +2,10 @@
 -- レンタルキッチン予約システム: 初期スキーマ
 -- ============================================
 
+-- 拡張の有効化
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "btree_gist";
+
 -- 1. profiles テーブル（Supabase Auth の拡張）
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
