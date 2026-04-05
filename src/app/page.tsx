@@ -167,7 +167,7 @@ export default function Home() {
             </div>
             <div className="aspect-[4/3] w-full overflow-hidden rounded-xl">
               <iframe
-                src="https://maps.google.com/maps?q=35.6907976,139.7667954&z=16&output=embed"
+                src="https://maps.google.com/maps?q=%E3%83%AA%E3%83%8E%E3%82%B9%E3%83%9Akitchen%E7%A5%9E%E7%94%B0TYD&z=17&output=embed"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
