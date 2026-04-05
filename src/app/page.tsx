@@ -139,11 +139,11 @@ export default function Home() {
           料金
         </h2>
         <p className="text-zinc-600 text-center mb-8">
-          1時間単位でご利用いただけます。料金は曜日により異なります。
+          人数制限なし。料金は曜日により異なります。
         </p>
         <div className="flex justify-center gap-6 flex-wrap">
-          <PriceCard label="平日" price="3,000" unit="円/時間" />
-          <PriceCard label="土日祝" price="4,000" unit="円/時間" />
+          <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
+          <PriceCard label="土日祝" price="2,800" unit="円/時間（税込）" sub="1時間単位" />
         </div>
       </section>
 
@@ -257,16 +257,19 @@ function PriceCard({
   label,
   price,
   unit,
+  sub,
 }: {
   label: string;
   price: string;
   unit: string;
+  sub?: string;
 }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white px-8 py-6">
       <p className="text-sm text-zinc-500 mb-1">{label}</p>
       <p className="text-3xl font-bold text-zinc-900">{price}</p>
       <p className="text-sm text-zinc-500">{unit}</p>
+      {sub && <p className="text-xs text-amber-600 mt-2">{sub}</p>}
     </div>
   );
 }

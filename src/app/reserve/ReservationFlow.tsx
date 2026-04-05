@@ -7,7 +7,7 @@ import { TimeSlotGrid } from "@/app/_components/TimeSlotGrid";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
 import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
-import type { Database } from "@/lib/types";
+import type { Database, PricingType } from "@/lib/types";
 
 type Option = Database["public"]["Tables"]["options"]["Row"];
 
@@ -20,6 +20,8 @@ type Props = {
 export function ReservationFlow({ options }: Props) {
   const [step, setStep] = useState<Step>("date");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [pricingType, setPricingType] = useState<PricingType>("hourly");
+  const [dailyPrice, setDailyPrice] = useState<number | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
@@ -31,7 +33,15 @@ export function ReservationFlow({ options }: Props) {
       const dateStr = format(date, "yyyy-MM-dd");
       const res = await fetch(`/api/availability?date=${dateStr}`);
       const data: AvailabilityResponse = await res.json();
+      setPricingType(data.pricingType);
+      setDailyPrice(data.dailyPrice);
       setSlots(data.slots);
+
+      // daily の場合は自動的に全枠を選択
+      if (data.pricingType === "daily" && data.slots.length > 0) {
+        const availableSlots = data.slots.filter((s) => s.available);
+        setSelectedSlots(availableSlots);
+      }
     } finally {
       setLoading(false);
     }
@@ -71,11 +81,21 @@ export function ReservationFlow({ options }: Props) {
     );
   }, []);
 
+  const basePrice =
+    pricingType === "daily"
+      ? (dailyPrice ?? 0)
+      : selectedSlots.reduce((sum, s) => sum + s.price, 0);
+
   const totalPrice =
-    selectedSlots.reduce((sum, s) => sum + s.price, 0) +
+    basePrice +
     options
       .filter((o) => selectedOptionIds.includes(o.id))
       .reduce((sum, o) => sum + o.price, 0);
+
+  const isDayAvailable =
+    pricingType === "daily" && slots.length > 0 && slots[0].available;
+  const isDayBooked =
+    pricingType === "daily" && slots.length > 0 && !slots[0].available;
 
   return (
     <div className="space-y-8">
@@ -97,17 +117,49 @@ export function ReservationFlow({ options }: Props) {
 
       {/* Step 2: 時間枠選択 */}
       <section className={step === "time" ? "" : "hidden"}>
-        <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-          時間枠を選択
-        </h2>
         {loading ? (
           <p className="text-zinc-500 text-sm">読み込み中...</p>
+        ) : pricingType === "daily" ? (
+          /* 平日: 丸一日プラン */
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+              丸一日プラン
+            </h2>
+            {isDayBooked ? (
+              <div className="rounded-lg border border-zinc-200 bg-zinc-100 p-6 text-center">
+                <p className="text-zinc-500">この日は予約済みです</p>
+              </div>
+            ) : isDayAvailable ? (
+              <div className="rounded-lg border-2 border-amber-600 bg-amber-50 p-6 text-center">
+                <p className="text-lg font-semibold text-zinc-900">
+                  {slots[0].startTime} - {slots[0].endTime}
+                </p>
+                <p className="text-2xl font-bold text-amber-600 mt-2">
+                  ¥{(dailyPrice ?? 0).toLocaleString()}
+                  <span className="text-sm font-normal text-zinc-500 ml-1">
+                    /日（税込）
+                  </span>
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">人数制限なし</p>
+              </div>
+            ) : (
+              <p className="text-zinc-500 text-sm">
+                この日は予約できません。
+              </p>
+            )}
+          </div>
         ) : (
-          <TimeSlotGrid
-            slots={slots}
-            selectedSlots={selectedSlots}
-            onToggle={handleSlotToggle}
-          />
+          /* 土日祝: 時間枠選択 */
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+              時間枠を選択
+            </h2>
+            <TimeSlotGrid
+              slots={slots}
+              selectedSlots={selectedSlots}
+              onToggle={handleSlotToggle}
+            />
+          </div>
         )}
         <div className="flex gap-3 mt-6">
           <button
@@ -119,7 +171,9 @@ export function ReservationFlow({ options }: Props) {
           </button>
           <button
             type="button"
-            disabled={selectedSlots.length === 0}
+            disabled={
+              pricingType === "daily" ? !isDayAvailable : selectedSlots.length === 0
+            }
             onClick={() => setStep("options")}
             className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -171,6 +225,8 @@ export function ReservationFlow({ options }: Props) {
           <BookingSummary
             date={selectedDate}
             slots={selectedSlots}
+            pricingType={pricingType}
+            dailyPrice={dailyPrice}
             options={options}
             selectedOptionIds={selectedOptionIds}
           />

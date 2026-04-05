@@ -3,13 +3,15 @@
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { TimeSlot } from "@/app/api/availability/route";
-import type { Database } from "@/lib/types";
+import type { Database, PricingType } from "@/lib/types";
 
 type Option = Database["public"]["Tables"]["options"]["Row"];
 
 type Props = {
   date: Date;
   slots: TimeSlot[];
+  pricingType: PricingType;
+  dailyPrice: number | null;
   options: Option[];
   selectedOptionIds: string[];
 };
@@ -17,10 +19,15 @@ type Props = {
 export function BookingSummary({
   date,
   slots,
+  pricingType,
+  dailyPrice,
   options,
   selectedOptionIds,
 }: Props) {
-  const basePrice = slots.reduce((sum, s) => sum + s.price, 0);
+  const basePrice =
+    pricingType === "daily"
+      ? (dailyPrice ?? 0)
+      : slots.reduce((sum, s) => sum + s.price, 0);
   const selectedOptions = options.filter((o) =>
     selectedOptionIds.includes(o.id)
   );
@@ -43,14 +50,20 @@ export function BookingSummary({
           <dt className="text-zinc-500">時間</dt>
           <dd className="text-zinc-900 font-medium">
             {slots[0].startTime} - {slots[slots.length - 1].endTime}
-            <span className="text-zinc-500 font-normal ml-1">
-              ({slots.length}時間)
-            </span>
+            {pricingType === "daily" ? (
+              <span className="text-zinc-500 font-normal ml-1">(丸一日)</span>
+            ) : (
+              <span className="text-zinc-500 font-normal ml-1">
+                ({slots.length}時間)
+              </span>
+            )}
           </dd>
         </div>
 
         <div className="flex justify-between">
-          <dt className="text-zinc-500">スペース料金</dt>
+          <dt className="text-zinc-500">
+            {pricingType === "daily" ? "丸一日プラン" : "スペース料金"}
+          </dt>
           <dd className="text-zinc-900">¥{basePrice.toLocaleString()}</dd>
         </div>
 

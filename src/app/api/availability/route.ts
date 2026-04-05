@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/lib/types";
+import type { Database, PricingType } from "@/lib/types";
 import { NextRequest } from "next/server";
 
 type AvailabilityRule = Database["public"]["Tables"]["availability_rules"]["Row"];
@@ -14,6 +14,8 @@ export type TimeSlot = {
 
 export type AvailabilityResponse = {
   date: string;
+  pricingType: PricingType;
+  dailyPrice: number | null;
   slots: TimeSlot[];
 };
 
@@ -21,9 +23,8 @@ export type AvailabilityResponse = {
  * GET /api/availability?date=2026-04-10
  *
  * 指定日の空き枠を返す。
- * availability_rules から該当曜日のスロットを生成し、
- * 既存の reservations (pending/confirmed) と blocked_dates を突き合わせて
- * available フラグを設定する。
+ * pricing_type が daily の場合は丸一日料金を返し、slots は空き確認用。
+ * pricing_type が hourly の場合は時間枠ごとの料金を返す。
  */
 export async function GET(request: NextRequest) {
   const dateParam = request.nextUrl.searchParams.get("date");
@@ -45,7 +46,12 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (blockedDate) {
-    return Response.json({ date: dateParam, slots: [] });
+    return Response.json({
+      date: dateParam,
+      pricingType: "hourly",
+      dailyPrice: null,
+      slots: [],
+    });
   }
 
   // 曜日を取得（0=日, 1=月, ..., 6=土）
@@ -60,8 +66,16 @@ export async function GET(request: NextRequest) {
     .returns<AvailabilityRule[]>();
 
   if (!rules || rules.length === 0) {
-    return Response.json({ date: dateParam, slots: [] });
+    return Response.json({
+      date: dateParam,
+      pricingType: "hourly",
+      dailyPrice: null,
+      slots: [],
+    });
   }
+
+  const rule = rules[0];
+  const pricingType = rule.pricing_type;
 
   // 該当日の予約（pending/confirmed）を取得
   const { data: reservations } = await supabase
@@ -71,41 +85,61 @@ export async function GET(request: NextRequest) {
     .in("status", ["pending", "confirmed"])
     .returns<Reservation[]>();
 
+  const hasBooking = (reservations ?? []).length > 0;
+
+  // daily の場合: 丸一日の空き状況を返す
+  if (pricingType === "daily") {
+    return Response.json({
+      date: dateParam,
+      pricingType: "daily",
+      dailyPrice: rule.price_per_slot,
+      slots: [
+        {
+          startTime: rule.start_time,
+          endTime: rule.end_time,
+          price: rule.price_per_slot,
+          available: !hasBooking,
+        },
+      ],
+    } satisfies AvailabilityResponse);
+  }
+
+  // hourly の場合: 時間枠ごとの空き状況を返す
   const bookedRanges = (reservations ?? []).map((r) => ({
     start: r.start_time,
     end: r.end_time,
   }));
 
-  // ルールからスロットを生成
   const slots: TimeSlot[] = [];
+  const startMinutes = timeToMinutes(rule.start_time);
+  const endMinutes = timeToMinutes(rule.end_time);
+  const duration = rule.slot_duration_minutes;
 
-  for (const rule of rules) {
-    const startMinutes = timeToMinutes(rule.start_time);
-    const endMinutes = timeToMinutes(rule.end_time);
-    const duration = rule.slot_duration_minutes;
+  for (let m = startMinutes; m + duration <= endMinutes; m += duration) {
+    const slotStart = minutesToTime(m);
+    const slotEnd = minutesToTime(m + duration);
 
-    for (let m = startMinutes; m + duration <= endMinutes; m += duration) {
-      const slotStart = minutesToTime(m);
-      const slotEnd = minutesToTime(m + duration);
+    const isBooked = bookedRanges.some(
+      (r) =>
+        timeToMinutes(r.start) < m + duration && timeToMinutes(r.end) > m
+    );
 
-      const isBooked = bookedRanges.some(
-        (r) =>
-          timeToMinutes(r.start) < m + duration && timeToMinutes(r.end) > m
-      );
-
-      slots.push({
-        startTime: slotStart,
-        endTime: slotEnd,
-        price: rule.price_per_slot,
-        available: !isBooked,
-      });
-    }
+    slots.push({
+      startTime: slotStart,
+      endTime: slotEnd,
+      price: rule.price_per_slot,
+      available: !isBooked,
+    });
   }
 
-  // 開始時間でソート
   slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  return Response.json({ date: dateParam, slots } satisfies AvailabilityResponse);
+  return Response.json({
+    date: dateParam,
+    pricingType: "hourly",
+    dailyPrice: null,
+    slots,
+  } satisfies AvailabilityResponse);
 }
 
 function timeToMinutes(time: string): number {
