@@ -71,17 +71,17 @@ export default function Home() {
           設備・備品
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm text-zinc-700">
-          <EquipmentItem label="キッチンカウンター" />
+          <EquipmentItem label="キッチンカウンター（シンク付）" />
           <EquipmentItem label="冷蔵庫" />
           <EquipmentItem label="電子レンジ" />
           <EquipmentItem label="トースター" />
           <EquipmentItem label="コーヒーメーカー" />
-          <EquipmentItem label="大型テーブル（12名）" />
-          <EquipmentItem label="ソファ席" />
-          <EquipmentItem label="プロジェクター" />
-          <EquipmentItem label="大型スクリーン" />
+          <EquipmentItem label="カウンターチェア" />
+          <EquipmentItem label="大型ダイニングテーブル" />
+          <EquipmentItem label="ソファ席（複数）" />
+          <EquipmentItem label="プロジェクター＆大型スクリーン" />
           <EquipmentItem label="ホワイトボード" />
-          <EquipmentItem label="Wi-Fi" />
+          <EquipmentItem label="トラックライト照明" />
           <EquipmentItem label="エアコン" />
         </div>
       </section>
