@@ -149,16 +149,34 @@ export default function Home() {
 
       {/* アクセス */}
       <section className="bg-zinc-50 px-6 py-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-2xl font-bold text-zinc-900 mb-6">アクセス</h2>
-          <p className="text-zinc-700 font-medium">
-            〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
-          </p>
-          <div className="mt-4 space-y-1 text-sm text-zinc-600">
-            <p>JR山手線 神田駅 徒歩5分</p>
-            <p>東京メトロ東西線 大手町駅 徒歩6分</p>
-            <p>都営新宿線 小川町駅 徒歩6分</p>
-            <p>東京メトロ丸ノ内線 淡路町駅 徒歩6分</p>
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-2xl font-bold text-zinc-900 text-center mb-6">
+            アクセス
+          </h2>
+          <div className="grid gap-8 md:grid-cols-2 items-start">
+            <div className="text-center md:text-left">
+              <p className="text-zinc-700 font-medium">
+                〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
+              </p>
+              <div className="mt-4 space-y-1 text-sm text-zinc-600">
+                <p>JR山手線 神田駅 徒歩5分</p>
+                <p>東京メトロ東西線 大手町駅 徒歩6分</p>
+                <p>都営新宿線 小川町駅 徒歩6分</p>
+                <p>東京メトロ丸ノ内線 淡路町駅 徒歩6分</p>
+              </div>
+            </div>
+            <div className="aspect-[4/3] w-full overflow-hidden rounded-xl">
+              <iframe
+                src="https://maps.google.com/maps?q=35.6907976,139.7667954&z=16&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="リノスペキッチン神田TYD"
+              />
+            </div>
           </div>
         </div>
       </section>
