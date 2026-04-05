@@ -70,13 +70,22 @@ export function ReservationFlow({ options }: Props) {
 
   const handleCheckout = useCallback(async () => {
     if (!selectedDate || selectedSlots.length === 0 || !guestName || !guestEmail) return;
+
+    // 非連続選択のチェック: 連続した枠のみ許可
+    const sorted = [...selectedSlots].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    );
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].startTime !== sorted[i - 1].endTime) {
+        setError("連続していない時間帯が含まれています。連続した時間帯を選択してください。");
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError(null);
 
     try {
-      const sorted = [...selectedSlots].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime)
-      );
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
