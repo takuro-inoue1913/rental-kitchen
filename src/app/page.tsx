@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { HeroSlider } from "@/app/_components/HeroSlider";
+import { Gallery } from "@/app/_components/Gallery";
 
 const GALLERY_IMAGES = [
   { src: "/images/kitchen-angle.jpeg", alt: "キッチン設備" },
@@ -34,26 +34,12 @@ export default function Home() {
       </HeroSlider>
 
       {/* ギャラリー */}
+      {/* ギャラリー */}
       <section className="mx-auto max-w-5xl px-6 py-16">
         <h2 className="text-2xl font-bold text-zinc-900 text-center mb-8">
           スペース紹介
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {GALLERY_IMAGES.map((img) => (
-            <div
-              key={img.src}
-              className="relative aspect-[4/3] overflow-hidden rounded-lg"
-            >
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                className="object-cover transition-transform hover:scale-105"
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-              />
-            </div>
-          ))}
-        </div>
+        <Gallery images={GALLERY_IMAGES} />
       </section>
 
       {/* 特徴 */}
