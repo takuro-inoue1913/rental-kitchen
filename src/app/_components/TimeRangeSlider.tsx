@@ -1,57 +1,25 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { TimeSlot, TimeBlock } from "@/app/api/availability/route";
+import type { TimeSlot } from "@/app/api/availability/route";
 
-type BaseProps = {
+type Props = {
   slots: TimeSlot[];
   selectedSlots: TimeSlot[];
   onSelect: (selected: TimeSlot[]) => void;
 };
 
-type HourlyProps = BaseProps & {
-  mode?: "hourly";
-  blocks?: never;
-};
-
-type BlockProps = BaseProps & {
-  mode: "block";
-  blocks: TimeBlock[];
-};
-
-type Props = HourlyProps | BlockProps;
-
-export function TimeRangeSlider(props: Props) {
-  const { slots, selectedSlots, onSelect } = props;
-  const mode = props.mode ?? "hourly";
-  const blocks: TimeBlock[] = mode === "block" && props.blocks ? props.blocks : [];
-
+export function TimeRangeSlider({ slots, selectedSlots, onSelect }: Props) {
   const barRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<"start" | "end" | null>(null);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  // ドラッグ開始時の操作: true=追加, false=削除
+  const [dragAdding, setDragAdding] = useState(true);
 
+  const selectedKeys = selectedSlots.map((s) => s.startTime);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const selectedSet = new Set(selectedKeys);
   const availableSlots = slots.filter((s) => s.available);
-
-  // 現在の選択範囲のインデックス
-  const startIdx =
-    selectedSlots.length > 0
-      ? slots.findIndex((s) => s.startTime === selectedSlots[0].startTime)
-      : -1;
-  const endIdx =
-    selectedSlots.length > 0
-      ? slots.findIndex(
-          (s) =>
-            s.startTime === selectedSlots[selectedSlots.length - 1].startTime
-        )
-      : -1;
-
-  // ブロックごとのインデックス範囲を算出
-  const blockRanges = blocks.map((block) => {
-    const start = slots.findIndex((s) => s.startTime === block.startTime);
-    const end = slots.findIndex(
-      (s) => s.endTime === block.endTime
-    );
-    return { start, end: end >= 0 ? end : slots.length - 1 };
-  });
 
   const getSlotIndexFromX = useCallback(
     (clientX: number) => {
@@ -64,85 +32,64 @@ export function TimeRangeSlider(props: Props) {
     [slots.length]
   );
 
-  const selectRange = useCallback(
-    (newStart: number, newEnd: number) => {
-      const [s, e] =
-        newStart <= newEnd ? [newStart, newEnd] : [newEnd, newStart];
-      const range = slots.slice(s, e + 1);
-      if (range.some((slot) => !slot.available)) return;
-      onSelect(range);
-    },
-    [slots, onSelect]
-  );
+  // ドラッグ中の範囲（プレビュー用）
+  const dragRange =
+    dragStart !== null && dragEnd !== null
+      ? { start: Math.min(dragStart, dragEnd), end: Math.max(dragStart, dragEnd) }
+      : null;
 
-  // block モード: クリックでブロック全体を選択
-  const handleBlockBarClick = useCallback(
-    (e: React.PointerEvent) => {
-      const idx = getSlotIndexFromX(e.clientX);
-      // クリック位置がどのブロックに属するか
-      const blockIdx = blockRanges.findIndex(
-        (r) => idx >= r.start && idx <= r.end
-      );
-      if (blockIdx < 0) return;
-      const range = blockRanges[blockIdx];
-      selectRange(range.start, range.end);
-    },
-    [getSlotIndexFromX, blockRanges, selectRange]
-  );
-
-  // hourly モード: ドラッグで範囲選択
-  const handleHourlyBarPointerDown = useCallback(
+  const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       const idx = getSlotIndexFromX(e.clientX);
       if (!slots[idx].available) return;
 
-      if (startIdx < 0) {
-        selectRange(idx, idx);
-        setDragging("end");
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      } else {
-        const distToStart = Math.abs(idx - startIdx);
-        const distToEnd = Math.abs(idx - endIdx);
-        const handle = distToStart <= distToEnd ? "start" : "end";
-        if (handle === "start") {
-          selectRange(idx, endIdx);
-        } else {
-          selectRange(startIdx, idx);
-        }
-        setDragging(handle);
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      }
-    },
-    [getSlotIndexFromX, slots, startIdx, endIdx, selectRange]
-  );
-
-  const handlePointerDown = useCallback(
-    (handle: "start" | "end", e: React.PointerEvent) => {
-      if (mode === "block") return;
-      e.preventDefault();
-      e.stopPropagation();
-      setDragging(handle);
+      // クリックした枠が選択済みなら削除モード、未選択なら追加モード
+      const isSelected = selectedSet.has(slots[idx].startTime);
+      setDragAdding(!isSelected);
+      setDragStart(idx);
+      setDragEnd(idx);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [mode]
+    [getSlotIndexFromX, slots, selectedSet]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!dragging || mode === "block") return;
+      if (dragStart === null) return;
       const idx = getSlotIndexFromX(e.clientX);
-      if (dragging === "start") {
-        selectRange(idx, endIdx >= 0 ? endIdx : idx);
-      } else {
-        selectRange(startIdx >= 0 ? startIdx : idx, idx);
-      }
+      setDragEnd(idx);
     },
-    [dragging, mode, getSlotIndexFromX, startIdx, endIdx, selectRange]
+    [dragStart, getSlotIndexFromX]
   );
 
   const handlePointerUp = useCallback(() => {
-    setDragging(null);
-  }, []);
+    if (dragStart === null || dragEnd === null) return;
+
+    const start = Math.min(dragStart, dragEnd);
+    const end = Math.max(dragStart, dragEnd);
+    const draggedSlots = slots.slice(start, end + 1);
+
+    let newSelected: TimeSlot[];
+
+    if (dragAdding) {
+      // 追加: ドラッグ範囲内の available な枠を追加
+      const toAdd = draggedSlots.filter(
+        (s) => s.available && !selectedSet.has(s.startTime)
+      );
+      newSelected = [...selectedSlots, ...toAdd];
+    } else {
+      // 削除: ドラッグ範囲内の枠を除外
+      const toRemove = new Set(draggedSlots.map((s) => s.startTime));
+      newSelected = selectedSlots.filter((s) => !toRemove.has(s.startTime));
+    }
+
+    // startTime でソート
+    newSelected.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    onSelect(newSelected);
+
+    setDragStart(null);
+    setDragEnd(null);
+  }, [dragStart, dragEnd, dragAdding, slots, selectedSlots, selectedSet, onSelect]);
 
   if (slots.length === 0) {
     return (
@@ -152,105 +99,76 @@ export function TimeRangeSlider(props: Props) {
     );
   }
 
+  // 選択中の時間帯をまとめて表示用テキストに
+  const selectionSummary = getSelectionSummary(selectedSlots);
+
   // 時間ラベル間隔
   const labelInterval = Math.max(1, Math.floor(slots.length / 6));
-
-  // block モード: どのブロックが選択中か
-  const selectedBlockIdx =
-    mode === "block" && startIdx >= 0
-      ? blockRanges.findIndex(
-          (r) => r.start === startIdx && r.end === endIdx
-        )
-      : -1;
 
   return (
     <div className="space-y-4">
       {/* 選択中の時間表示 */}
       <div className="text-center">
-        {selectedSlots.length > 0 ? (
-          <div>
-            <p className="text-lg font-semibold text-amber-600">
-              {selectedSlots[0].startTime} -{" "}
-              {selectedSlots[selectedSlots.length - 1].endTime}
-              <span className="text-sm font-normal text-zinc-500 ml-2">
-                ({selectedSlots.length}時間)
-              </span>
-            </p>
-            {mode === "block" && selectedBlockIdx >= 0 && (
-              <p className="text-xl font-bold text-amber-600 mt-1">
-                ¥{blocks[selectedBlockIdx].price.toLocaleString()}
-                <span className="text-sm font-normal text-zinc-500 ml-1">
-                  /枠（税込）
+        {selectionSummary.length > 0 ? (
+          <div className="space-y-1">
+            {selectionSummary.map((range, i) => (
+              <p key={i} className="text-lg font-semibold text-amber-600">
+                {range.start} - {range.end}
+                <span className="text-sm font-normal text-zinc-500 ml-2">
+                  ({range.hours}時間)
                 </span>
               </p>
-            )}
+            ))}
+            <p className="text-sm text-zinc-500">
+              合計 {selectionSummary.reduce((sum, r) => sum + r.hours, 0)} 時間
+            </p>
           </div>
         ) : (
           <p className="text-sm text-zinc-500">
-            {mode === "block"
-              ? "バーの空き枠をクリックして選択"
-              : "バーをクリックまたはドラッグして時間帯を選択"}
+            バーをクリックまたはドラッグして時間帯を選択
           </p>
         )}
       </div>
 
       {/* スライダーバー */}
-      <div
-        className="relative select-none touch-none"
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        {/* バー本体 */}
+      <div className="relative select-none touch-none">
         <div
           ref={barRef}
           className="relative h-12 rounded-lg overflow-hidden cursor-pointer"
-          onPointerDown={
-            mode === "block" ? handleBlockBarClick : handleHourlyBarPointerDown
-          }
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
         >
           <div className="flex h-full">
             {slots.map((slot, i) => {
-              const isSelected =
-                startIdx >= 0 && endIdx >= 0 && i >= startIdx && i <= endIdx;
+              const isSelected = selectedSet.has(slot.startTime);
+
+              // ドラッグ中のプレビュー
+              let isDragPreview = false;
+              if (dragRange && i >= dragRange.start && i <= dragRange.end && slot.available) {
+                isDragPreview = true;
+              }
+
+              let bgClass: string;
+              if (!slot.available) {
+                bgClass = "bg-zinc-300";
+              } else if (isDragPreview) {
+                bgClass = dragAdding ? "bg-amber-400" : "bg-amber-200";
+              } else if (isSelected) {
+                bgClass = "bg-amber-500";
+              } else {
+                bgClass = "bg-amber-100 hover:bg-amber-200";
+              }
 
               return (
                 <div
                   key={slot.startTime}
-                  className={`flex-1 border-r border-white/20 transition-colors ${
-                    !slot.available
-                      ? "bg-zinc-300"
-                      : isSelected
-                        ? "bg-amber-500"
-                        : "bg-amber-100 hover:bg-amber-200"
-                  }`}
+                  className={`flex-1 border-r border-white/20 transition-colors ${bgClass}`}
                   title={`${slot.startTime} - ${slot.endTime}${!slot.available ? " (予約済み)" : ""}`}
                 />
               );
             })}
           </div>
-
-          {/* ドラッグハンドル（hourly のみ） */}
-          {mode === "hourly" && startIdx >= 0 && (
-            <div
-              className="absolute top-0 h-full w-3 cursor-ew-resize z-10 flex items-center justify-center"
-              style={{ left: `${(startIdx / slots.length) * 100}%` }}
-              onPointerDown={(e) => handlePointerDown("start", e)}
-            >
-              <div className="w-1.5 h-8 rounded-full bg-amber-700 shadow" />
-            </div>
-          )}
-          {mode === "hourly" && endIdx >= 0 && (
-            <div
-              className="absolute top-0 h-full w-3 cursor-ew-resize z-10 flex items-center justify-center"
-              style={{
-                left: `${((endIdx + 1) / slots.length) * 100}%`,
-                transform: "translateX(-100%)",
-              }}
-              onPointerDown={(e) => handlePointerDown("end", e)}
-            >
-              <div className="w-1.5 h-8 rounded-full bg-amber-700 shadow" />
-            </div>
-          )}
         </div>
 
         {/* 時間ラベル */}
@@ -302,4 +220,38 @@ export function TimeRangeSlider(props: Props) {
       )}
     </div>
   );
+}
+
+type RangeSummary = { start: string; end: string; hours: number };
+
+function getSelectionSummary(
+  selectedSlots: TimeSlot[]
+): RangeSummary[] {
+  if (selectedSlots.length === 0) return [];
+
+  const sorted = [...selectedSlots].sort((a, b) =>
+    a.startTime.localeCompare(b.startTime)
+  );
+
+  const ranges: RangeSummary[] = [];
+  let rangeStart = sorted[0].startTime;
+  let rangeEnd = sorted[0].endTime;
+  let hours = 1;
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].startTime === rangeEnd) {
+      // 連続
+      rangeEnd = sorted[i].endTime;
+      hours++;
+    } else {
+      // 途切れた
+      ranges.push({ start: rangeStart, end: rangeEnd, hours });
+      rangeStart = sorted[i].startTime;
+      rangeEnd = sorted[i].endTime;
+      hours = 1;
+    }
+  }
+  ranges.push({ start: rangeStart, end: rangeEnd, hours });
+
+  return ranges;
 }

@@ -6,7 +6,7 @@ import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
-import type { TimeSlot, TimeBlock, AvailabilityResponse } from "@/app/api/availability/route";
+import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
 import type { Database, PricingType } from "@/lib/types";
 
 type Option = Database["public"]["Tables"]["options"]["Row"];
@@ -23,7 +23,6 @@ export function ReservationFlow({ options }: Props) {
   const [pricingType, setPricingType] = useState<PricingType>("hourly");
   const [dailyPrice, setDailyPrice] = useState<number | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [blocks, setBlocks] = useState<TimeBlock[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +36,6 @@ export function ReservationFlow({ options }: Props) {
       setPricingType(data.pricingType);
       setDailyPrice(data.dailyPrice);
       setSlots(data.slots);
-      setBlocks(data.blocks);
       setSelectedSlots([]);
     } finally {
       setLoading(false);
@@ -66,19 +64,15 @@ export function ReservationFlow({ options }: Props) {
     );
   }, []);
 
-  // daily: 選択中のスロットがどのブロックに属するか → その price
-  const selectedBlock =
+  // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
+  const selectedRangeCount =
     pricingType === "daily" && selectedSlots.length > 0
-      ? blocks.find(
-          (b) =>
-            b.startTime === selectedSlots[0].startTime &&
-            b.endTime === selectedSlots[selectedSlots.length - 1].endTime
-        )
-      : null;
+      ? countRanges(selectedSlots)
+      : 0;
 
   const basePrice =
     pricingType === "daily"
-      ? (selectedBlock?.price ?? 0)
+      ? selectedRangeCount * (dailyPrice ?? 0)
       : selectedSlots.reduce((sum, s) => sum + s.price, 0);
 
   const totalPrice =
@@ -266,4 +260,16 @@ function StepIndicator({ current }: { current: Step }) {
       ))}
     </div>
   );
+}
+
+function countRanges(slots: TimeSlot[]): number {
+  if (slots.length === 0) return 0;
+  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  let count = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].startTime !== sorted[i - 1].endTime) {
+      count++;
+    }
+  }
+  return count;
 }

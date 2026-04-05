@@ -46,17 +46,20 @@ export function BookingSummary({
           </dd>
         </div>
 
-        <div className="flex justify-between">
-          <dt className="text-zinc-500">時間</dt>
-          <dd className="text-zinc-900 font-medium">
-            {slots[0].startTime} - {slots[slots.length - 1].endTime}
-            {pricingType === "daily" ? (
-              <span className="text-zinc-500 font-normal ml-1">(丸一日)</span>
-            ) : (
-              <span className="text-zinc-500 font-normal ml-1">
-                ({slots.length}時間)
-              </span>
-            )}
+        <div>
+          <dt className="text-zinc-500 mb-1">時間</dt>
+          <dd className="text-zinc-900 font-medium space-y-1">
+            {getTimeRanges(slots).map((range, i) => (
+              <div key={i} className="flex justify-between">
+                <span>{range.start} - {range.end}</span>
+                <span className="text-zinc-500 font-normal">
+                  {range.hours}時間
+                </span>
+              </div>
+            ))}
+            <div className="text-xs text-zinc-500 text-right">
+              合計 {slots.length}時間
+            </div>
           </dd>
         </div>
 
@@ -83,4 +86,26 @@ export function BookingSummary({
       </dl>
     </div>
   );
+}
+
+function getTimeRanges(slots: TimeSlot[]) {
+  if (slots.length === 0) return [];
+  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const ranges: { start: string; end: string; hours: number }[] = [];
+  let start = sorted[0].startTime;
+  let end = sorted[0].endTime;
+  let hours = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].startTime === end) {
+      end = sorted[i].endTime;
+      hours++;
+    } else {
+      ranges.push({ start, end, hours });
+      start = sorted[i].startTime;
+      end = sorted[i].endTime;
+      hours = 1;
+    }
+  }
+  ranges.push({ start, end, hours });
+  return ranges;
 }
