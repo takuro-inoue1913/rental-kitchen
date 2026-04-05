@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCalendarEvents } from "@/lib/google-calendar";
-import type { Database, PricingType } from "@/lib/types";
+import type { PricingType } from "@/lib/types";
+import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
 
 type AvailabilityRule = Database["public"]["Tables"]["availability_rules"]["Row"];
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
   }
 
   const rule = rules[0];
-  const pricingType = rule.pricing_type;
+  const pricingType = rule.pricing_type as PricingType;
 
   // Supabase の予約と Google カレンダーのイベントを並行取得
   const [{ data: reservations }, calendarEvents] = await Promise.all([

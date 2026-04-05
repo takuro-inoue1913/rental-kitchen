@@ -25,7 +25,11 @@ export function ReservationFlow({ options }: Props) {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSlots = useCallback(async (date: Date) => {
     setLoading(true);
@@ -63,6 +67,43 @@ export function ReservationFlow({ options }: Props) {
         : [...prev, optionId]
     );
   }, []);
+
+  const handleCheckout = useCallback(async () => {
+    if (!selectedDate || selectedSlots.length === 0 || !guestName || !guestEmail) return;
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const sorted = [...selectedSlots].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime)
+      );
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: format(selectedDate, "yyyy-MM-dd"),
+          startTime: sorted[0].startTime,
+          endTime: sorted[sorted.length - 1].endTime,
+          optionIds: selectedOptionIds,
+          guestEmail,
+          guestName,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "エラーが発生しました");
+        return;
+      }
+
+      // Stripe Checkout に遷移
+      window.location.href = data.url;
+    } catch {
+      setError("通信エラーが発生しました");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [selectedDate, selectedSlots, selectedOptionIds, guestName, guestEmail]);
 
   // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
   const selectedRangeCount =
@@ -198,7 +239,7 @@ export function ReservationFlow({ options }: Props) {
         </div>
       </section>
 
-      {/* Step 4: 確認 */}
+      {/* Step 4: 確認・お客様情報・決済 */}
       <section className={step === "confirm" ? "" : "hidden"}>
         <h2 className="text-lg font-semibold text-zinc-900 mb-4">
           予約内容の確認
@@ -213,6 +254,46 @@ export function ReservationFlow({ options }: Props) {
             selectedOptionIds={selectedOptionIds}
           />
         )}
+
+        {/* お客様情報 */}
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
+          <h3 className="text-base font-semibold text-zinc-900 mb-4">
+            お客様情報
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="guestName" className="block text-sm text-zinc-600 mb-1">
+                お名前
+              </label>
+              <input
+                id="guestName"
+                type="text"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="山田 太郎"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="guestEmail" className="block text-sm text-zinc-600 mb-1">
+                メールアドレス
+              </label>
+              <input
+                id="guestEmail"
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
+        )}
+
         <div className="flex gap-3 mt-6">
           <button
             type="button"
@@ -223,9 +304,11 @@ export function ReservationFlow({ options }: Props) {
           </button>
           <button
             type="button"
-            className="flex-1 rounded-lg bg-amber-600 px-4 py-3 text-white font-medium hover:bg-amber-700"
+            disabled={!guestName || !guestEmail || submitting}
+            onClick={handleCheckout}
+            className="flex-1 rounded-lg bg-amber-600 px-4 py-3 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            決済に進む（¥{totalPrice.toLocaleString()}）
+            {submitting ? "処理中..." : `決済に進む（¥${totalPrice.toLocaleString()}）`}
           </button>
         </div>
         <p className="text-xs text-zinc-500 text-center mt-3">
