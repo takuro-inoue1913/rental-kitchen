@@ -1,6 +1,8 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCalendarEvents } from "@/lib/google-calendar";
+import { parseCheckoutBody } from "@/lib/checkout-validation";
+import { timeToMinutes } from "@/lib/time-utils";
 import { CURRENCY, RESERVATION_EXPIRY_MINUTES } from "@/lib/constants";
 import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
@@ -8,79 +10,13 @@ import { NextRequest } from "next/server";
 type AvailabilityRule =
   Database["public"]["Tables"]["availability_rules"]["Row"];
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
-
-function isNonEmptyString(v: unknown): v is string {
-  return typeof v === "string" && v.length > 0;
-}
-
-type CheckoutBody = {
-  date: string;
-  startTime: string;
-  endTime: string;
-  optionIds: string[];
-  guestEmail: string;
-  guestName: string;
-};
-
-function parseBody(
-  raw: unknown
-): { data: CheckoutBody } | { error: string } {
-  if (!raw || typeof raw !== "object") {
-    return { error: "リクエストボディが不正です" };
-  }
-  const b = raw as Record<string, unknown>;
-
-  if (!isNonEmptyString(b.date) || !DATE_RE.test(b.date)) {
-    return { error: "date は YYYY-MM-DD 形式で必須です" };
-  }
-  if (!isNonEmptyString(b.startTime) || !TIME_RE.test(b.startTime)) {
-    return { error: "startTime は HH:MM 形式で必須です" };
-  }
-  if (!isNonEmptyString(b.endTime) || !TIME_RE.test(b.endTime)) {
-    return { error: "endTime は HH:MM 形式で必須です" };
-  }
-  if (!isNonEmptyString(b.guestEmail)) {
-    return { error: "guestEmail は必須です" };
-  }
-  if (!isNonEmptyString(b.guestName)) {
-    return { error: "guestName は必須です" };
-  }
-
-  const optionIds = b.optionIds ?? [];
-  if (
-    !Array.isArray(optionIds) ||
-    !optionIds.every((id) => typeof id === "string")
-  ) {
-    return { error: "optionIds は文字列配列である必要があります" };
-  }
-
-  const startMin = timeToMinutes(b.startTime);
-  const endMin = timeToMinutes(b.endTime);
-  if (endMin <= startMin) {
-    return { error: "endTime は startTime より後である必要があります" };
-  }
-
-  return {
-    data: {
-      date: b.date,
-      startTime: b.startTime,
-      endTime: b.endTime,
-      optionIds: optionIds as string[],
-      guestEmail: b.guestEmail,
-      guestName: b.guestName,
-    },
-  };
-}
-
 /**
  * POST /api/stripe/checkout
  *
  * 予約を pending で作成し、Stripe Checkout Session を返す。
  */
 export async function POST(request: NextRequest) {
-  const parsed = parseBody(await request.json());
+  const parsed = parseCheckoutBody(await request.json());
   if ("error" in parsed) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
@@ -240,9 +176,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
 }

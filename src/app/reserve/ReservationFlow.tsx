@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { format } from "date-fns";
+import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
 import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
 import { OptionSelector } from "@/app/_components/OptionSelector";
@@ -72,15 +73,13 @@ export function ReservationFlow({ options }: Props) {
     if (!selectedDate || selectedSlots.length === 0 || !guestName || !guestEmail) return;
 
     // 非連続選択のチェック: 連続した枠のみ許可
+    if (!areSlotsContiguous(selectedSlots)) {
+      setError("連続していない時間帯が含まれています。連続した時間帯を選択してください。");
+      return;
+    }
     const sorted = [...selectedSlots].sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     );
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].startTime !== sorted[i - 1].endTime) {
-        setError("連続していない時間帯が含まれています。連続した時間帯を選択してください。");
-        return;
-      }
-    }
 
     setSubmitting(true);
     setError(null);
@@ -366,14 +365,3 @@ function StepIndicator({ current }: { current: Step }) {
   );
 }
 
-function countRanges(slots: TimeSlot[]): number {
-  if (slots.length === 0) return 0;
-  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
-  let count = 1;
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].startTime !== sorted[i - 1].endTime) {
-      count++;
-    }
-  }
-  return count;
-}
