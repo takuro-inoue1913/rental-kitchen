@@ -5,18 +5,74 @@ import { CURRENCY, RESERVATION_EXPIRY_MINUTES } from "@/lib/constants";
 import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
 
-type AvailabilityRule = Database["public"]["Tables"]["availability_rules"]["Row"];
-type Reservation = Pick<Database["public"]["Tables"]["reservations"]["Row"], "start_time" | "end_time">;
-type OptionRow = Database["public"]["Tables"]["options"]["Row"];
+type AvailabilityRule =
+  Database["public"]["Tables"]["availability_rules"]["Row"];
 
-type CheckoutRequest = {
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === "string" && v.length > 0;
+}
+
+type CheckoutBody = {
   date: string;
   startTime: string;
   endTime: string;
   optionIds: string[];
-  guestEmail?: string;
-  guestName?: string;
+  guestEmail: string;
+  guestName: string;
 };
+
+function parseBody(
+  raw: unknown
+): { data: CheckoutBody } | { error: string } {
+  if (!raw || typeof raw !== "object") {
+    return { error: "リクエストボディが不正です" };
+  }
+  const b = raw as Record<string, unknown>;
+
+  if (!isNonEmptyString(b.date) || !DATE_RE.test(b.date)) {
+    return { error: "date は YYYY-MM-DD 形式で必須です" };
+  }
+  if (!isNonEmptyString(b.startTime) || !TIME_RE.test(b.startTime)) {
+    return { error: "startTime は HH:MM 形式で必須です" };
+  }
+  if (!isNonEmptyString(b.endTime) || !TIME_RE.test(b.endTime)) {
+    return { error: "endTime は HH:MM 形式で必須です" };
+  }
+  if (!isNonEmptyString(b.guestEmail)) {
+    return { error: "guestEmail は必須です" };
+  }
+  if (!isNonEmptyString(b.guestName)) {
+    return { error: "guestName は必須です" };
+  }
+
+  const optionIds = b.optionIds ?? [];
+  if (
+    !Array.isArray(optionIds) ||
+    !optionIds.every((id) => typeof id === "string")
+  ) {
+    return { error: "optionIds は文字列配列である必要があります" };
+  }
+
+  const startMin = timeToMinutes(b.startTime);
+  const endMin = timeToMinutes(b.endTime);
+  if (endMin <= startMin) {
+    return { error: "endTime は startTime より後である必要があります" };
+  }
+
+  return {
+    data: {
+      date: b.date,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      optionIds: optionIds as string[],
+      guestEmail: b.guestEmail,
+      guestName: b.guestName,
+    },
+  };
+}
 
 /**
  * POST /api/stripe/checkout
@@ -24,22 +80,12 @@ type CheckoutRequest = {
  * 予約を pending で作成し、Stripe Checkout Session を返す。
  */
 export async function POST(request: NextRequest) {
-  const body: CheckoutRequest = await request.json();
-  const { date, startTime, endTime, optionIds, guestEmail, guestName } = body;
-
-  if (!date || !startTime || !endTime) {
-    return Response.json(
-      { error: "date, startTime, endTime は必須です" },
-      { status: 400 }
-    );
+  const parsed = parseBody(await request.json());
+  if ("error" in parsed) {
+    return Response.json({ error: parsed.error }, { status: 400 });
   }
-
-  if (!guestEmail || !guestName) {
-    return Response.json(
-      { error: "guestEmail, guestName は必須です" },
-      { status: 400 }
-    );
-  }
+  const { date, startTime, endTime, optionIds, guestEmail, guestName } =
+    parsed.data;
 
   const supabase = createAdminClient();
 
@@ -59,30 +105,13 @@ export async function POST(request: NextRequest) {
   const rule = rules[0];
   const pricingType = rule.pricing_type;
 
-  // 空き確認: DB + Google カレンダー
-  const [{ data: existingReservations }, calendarEvents] = await Promise.all([
-    supabase
-      .from("reservations")
-      .select("start_time, end_time")
-      .eq("date", date)
-      .in("status", ["pending", "confirmed"])
-      .returns<Reservation[]>(),
-    getCalendarEvents(date),
-  ]);
-
-  const bookedRanges = [
-    ...(existingReservations ?? []).map((r) => ({
-      start: r.start_time as string,
-      end: r.end_time as string,
-    })),
-    ...calendarEvents
-      .filter((e) => !e.isAllDay)
-      .map((e) => ({ start: e.startTime, end: e.endTime })),
-  ];
-
+  // 空き確認: Google カレンダーのみ（Phase 6 で Supabase も統合予定）
+  const calendarEvents = await getCalendarEvents(date);
+  const bookedRanges = calendarEvents
+    .filter((e) => !e.isAllDay)
+    .map((e) => ({ start: e.startTime, end: e.endTime }));
   const hasAllDay = calendarEvents.some((e) => e.isAllDay);
 
-  // 要求時間帯と既存予約の重複チェック
   const reqStart = timeToMinutes(startTime);
   const reqEnd = timeToMinutes(endTime);
   const hasConflict =
@@ -98,27 +127,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 料金計算
+  // 料金計算（整数保証）
   let basePrice: number;
   if (pricingType === "daily") {
     basePrice = rule.price_per_slot;
   } else {
-    const hours = (reqEnd - reqStart) / 60;
+    const hours = Math.round((reqEnd - reqStart) / 60);
     basePrice = rule.price_per_slot * hours;
   }
 
   // オプション取得
-  const { data: selectedOptions } = await supabase
-    .from("options")
-    .select("*")
-    .in("id", optionIds.length > 0 ? optionIds : ["__none__"])
-    .eq("is_active", true)
-    .returns<OptionRow[]>();
+  let selectedOptions: { id: string; name: string; price: number }[] = [];
+  if (optionIds.length > 0) {
+    const { data } = await supabase
+      .from("options")
+      .select("id, name, price")
+      .in("id", optionIds)
+      .eq("is_active", true);
+    selectedOptions = data ?? [];
+  }
 
-  const optionsPrice = (selectedOptions ?? []).reduce(
-    (sum, o) => sum + o.price,
-    0
-  );
+  const optionsPrice = selectedOptions.reduce((sum, o) => sum + o.price, 0);
   const totalPrice = basePrice + optionsPrice;
 
   // 予約を pending で作成
@@ -147,7 +176,7 @@ export async function POST(request: NextRequest) {
   }
 
   // オプションを中間テーブルに挿入
-  if (selectedOptions && selectedOptions.length > 0) {
+  if (selectedOptions.length > 0) {
     await supabase.from("reservation_options").insert(
       selectedOptions.map((o) => ({
         reservation_id: reservation.id,
@@ -158,44 +187,59 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Stripe Checkout Session 作成
-  const lineItems = [
-    {
-      price_data: {
-        currency: CURRENCY,
-        product_data: {
-          name:
-            pricingType === "daily"
-              ? `スペース利用（丸一日）${date}`
-              : `スペース利用 ${date} ${startTime}-${endTime}`,
+  // Stripe Checkout Session 作成（失敗時は予約をキャンセル）
+  try {
+    const lineItems = [
+      {
+        price_data: {
+          currency: CURRENCY,
+          product_data: {
+            name:
+              pricingType === "daily"
+                ? `スペース利用（丸一日）${date}`
+                : `スペース利用 ${date} ${startTime}-${endTime}`,
+          },
+          unit_amount: basePrice,
         },
-        unit_amount: basePrice,
+        quantity: 1,
       },
-      quantity: 1,
-    },
-    ...(selectedOptions ?? []).map((o) => ({
-      price_data: {
-        currency: CURRENCY,
-        product_data: { name: o.name },
-        unit_amount: o.price,
-      },
-      quantity: 1,
-    })),
-  ];
+      ...selectedOptions.map((o) => ({
+        price_data: {
+          currency: CURRENCY,
+          product_data: { name: o.name },
+          unit_amount: o.price,
+        },
+        quantity: 1,
+      })),
+    ];
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: lineItems,
-    customer_email: guestEmail,
-    metadata: { reservation_id: reservation.id },
-    success_url: `${siteUrl}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl}/reserve?cancelled=true`,
-    expires_at: Math.floor(Date.now() / 1000) + RESERVATION_EXPIRY_MINUTES * 60,
-  });
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: lineItems,
+      customer_email: guestEmail,
+      metadata: { reservation_id: reservation.id },
+      success_url: `${siteUrl}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/reserve?cancelled=true`,
+      expires_at:
+        Math.floor(Date.now() / 1000) + RESERVATION_EXPIRY_MINUTES * 60,
+    });
 
-  return Response.json({ url: session.url });
+    return Response.json({ url: session.url });
+  } catch (err) {
+    console.error("Stripe session creation failed:", err);
+    // Stripe 失敗時は予約をキャンセルして孤児データを防ぐ
+    await supabase
+      .from("reservations")
+      .update({ status: "cancelled" })
+      .eq("id", reservation.id);
+    return Response.json(
+      { error: "決済セッションの作成に失敗しました" },
+      { status: 500 }
+    );
+  }
 }
 
 function timeToMinutes(time: string): number {
