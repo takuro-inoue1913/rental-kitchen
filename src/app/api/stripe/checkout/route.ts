@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { parseCheckoutBody } from "@/lib/checkout-validation";
 import { timeToMinutes } from "@/lib/time-utils";
+import { getEffectiveDayOfWeek } from "@/lib/date-utils";
 import { CURRENCY, RESERVATION_EXPIRY_MINUTES } from "@/lib/constants";
 import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
@@ -25,8 +26,8 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // 曜日から営業ルールを取得
-  const dayOfWeek = new Date(date + "T00:00:00").getDay();
+  // 曜日から営業ルールを取得（祝日は日曜扱い）
+  const dayOfWeek = getEffectiveDayOfWeek(date);
   const { data: rules } = await supabase
     .from("availability_rules")
     .select("*")

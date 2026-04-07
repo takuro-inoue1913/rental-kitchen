@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { timeToMinutes, minutesToTime } from "@/lib/time-utils";
+import { getEffectiveDayOfWeek } from "@/lib/date-utils";
 import type { PricingType } from "@/lib/types";
 import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
@@ -63,8 +64,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // 曜日を取得（0=日, 1=月, ..., 6=土）
-  const dayOfWeek = new Date(dateParam + "T00:00:00").getDay();
+  // 曜日を取得（祝日は日曜扱い → 土日祝で同じ料金体系）
+  const dayOfWeek = getEffectiveDayOfWeek(dateParam);
 
   // 該当曜日の営業ルールを取得
   const { data: rules } = await supabase
