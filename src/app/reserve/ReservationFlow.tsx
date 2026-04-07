@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { format } from "date-fns";
+import { format, addDays, subDays, isBefore, startOfDay } from "date-fns";
+import { ja } from "date-fns/locale";
 import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
 import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
@@ -57,6 +58,23 @@ export function ReservationFlow({ options }: Props) {
     },
     [fetchSlots]
   );
+
+  const today = startOfDay(new Date());
+
+  const handlePrevDay = useCallback(() => {
+    if (!selectedDate) return;
+    const prev = subDays(selectedDate, 1);
+    if (isBefore(prev, today)) return;
+    setSelectedDate(prev);
+    fetchSlots(prev);
+  }, [selectedDate, today, fetchSlots]);
+
+  const handleNextDay = useCallback(() => {
+    if (!selectedDate) return;
+    const next = addDays(selectedDate, 1);
+    setSelectedDate(next);
+    fetchSlots(next);
+  }, [selectedDate, fetchSlots]);
 
   const handleSlotSelect = useCallback((selected: TimeSlot[]) => {
     setSelectedSlots(selected);
@@ -153,6 +171,31 @@ export function ReservationFlow({ options }: Props) {
 
       {/* Step 2: 時間枠選択 */}
       <section className={step === "time" ? "" : "hidden"}>
+        {/* 日付ナビゲーション */}
+        {selectedDate && (
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              disabled={loading || isBefore(subDays(selectedDate, 1), today)}
+              className="px-4 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
+            >
+              &lt; 前日
+            </button>
+            <span className="text-xl font-bold text-zinc-900">
+              {format(selectedDate, "yyyy年M月d日（E）", { locale: ja })}
+            </span>
+            <button
+              type="button"
+              onClick={handleNextDay}
+              disabled={loading}
+              className="px-4 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
+            >
+              次日 &gt;
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-5 w-40 rounded bg-zinc-200" />
