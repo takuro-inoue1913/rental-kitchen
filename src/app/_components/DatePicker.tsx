@@ -43,9 +43,9 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
         <button
           type="button"
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-600"
+          className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
-          &lt;
+          &lt; 前月
         </button>
         <h3 className="text-lg font-semibold text-zinc-900">
           {format(currentMonth, "yyyy年M月", { locale: ja })}
@@ -53,9 +53,9 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
         <button
           type="button"
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-600"
+          className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
-          &gt;
+          次月 &gt;
         </button>
       </div>
 
