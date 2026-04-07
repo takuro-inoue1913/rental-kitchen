@@ -14,8 +14,10 @@ import {
   isSameDay,
   isBefore,
   startOfDay,
+  getDay,
 } from "date-fns";
 import { ja } from "date-fns/locale";
+import holidayJp from "@holiday-jp/holiday_jp";
 
 type Props = {
   selectedDate: Date | null;
@@ -59,10 +61,12 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
 
       {/* 曜日 */}
       <div className="grid grid-cols-7 mb-1">
-        {weekDays.map((day) => (
+        {weekDays.map((day, i) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-zinc-500 py-1"
+            className={`text-center text-xs font-medium py-1 ${
+              i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-zinc-500"
+            }`}
           >
             {day}
           </div>
@@ -77,6 +81,26 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
           const disabled = !isCurrentMonth || isPast;
+          const dow = getDay(day);
+          const isSunday = dow === 0;
+          const isSaturday = dow === 6;
+          const isHoliday = holidayJp.isHoliday(day);
+
+          // 日付テキスト色（選択中・無効以外）
+          const dayColor =
+            disabled
+              ? isSunday || isHoliday
+                ? "text-red-300"
+                : isSaturday
+                  ? "text-blue-300"
+                  : "text-zinc-300"
+              : isSelected
+                ? ""
+                : isSunday || isHoliday
+                  ? "text-red-500"
+                  : isSaturday
+                    ? "text-blue-500"
+                    : "text-zinc-900";
 
           return (
             <button
@@ -87,10 +111,10 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm
                 transition-colors
-                ${disabled ? "text-zinc-300 cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
+                ${disabled ? "cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
                 ${isSelected ? "bg-amber-600 text-white hover:bg-amber-700" : ""}
                 ${isToday && !isSelected ? "ring-1 ring-amber-400" : ""}
-                ${isCurrentMonth && !disabled && !isSelected ? "text-zinc-900" : ""}
+                ${dayColor}
               `}
             >
               {format(day, "d")}
