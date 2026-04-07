@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 type Props = {
   href: string;
@@ -13,11 +13,13 @@ type Props = {
 export function LoadingLink({ href, className = "", children }: Props) {
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  // ルート変更でリセット
-  useEffect(() => {
+  // ルート変更でリセット（レンダー中に状態調整）
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setLoading(false);
-  }, [pathname]);
+  }
 
   const handleClick = useCallback(() => {
     setLoading(true);
