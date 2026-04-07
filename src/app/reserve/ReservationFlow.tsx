@@ -173,23 +173,23 @@ export function ReservationFlow({ options }: Props) {
       <section className={step === "time" ? "" : "hidden"}>
         {/* 日付ナビゲーション */}
         {selectedDate && (
-          <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="flex items-center justify-between mb-6">
             <button
               type="button"
               onClick={handlePrevDay}
               disabled={loading || isBefore(subDays(selectedDate, 1), today)}
-              className="px-4 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
+              className="shrink-0 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 text-sm font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
             >
               &lt; 前日
             </button>
-            <span className="text-xl font-bold text-zinc-900">
+            <span className="text-base sm:text-xl font-bold text-zinc-900 text-center truncate px-2">
               {format(selectedDate, "yyyy年M月d日（E）", { locale: ja })}
             </span>
             <button
               type="button"
               onClick={handleNextDay}
               disabled={loading}
-              className="px-4 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
+              className="shrink-0 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-zinc-700 text-sm font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-zinc-300 transition-colors"
             >
               次日 &gt;
             </button>
