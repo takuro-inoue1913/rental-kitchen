@@ -173,8 +173,11 @@ export function TimeRangeSlider({ slots, selectedSlots, onSelect }: Props) {
 
         {/* 時間ラベル */}
         <div className="flex mt-1">
-          {slots.map((slot, i) =>
-            i % labelInterval === 0 ? (
+          {slots.map((slot, i) => {
+            if (i % labelInterval !== 0) return null;
+            // 末尾ラベルとの重なりを防ぐ: 残りスロットが間隔未満なら非表示
+            if (slots.length - i < labelInterval) return null;
+            return (
               <div
                 key={slot.startTime}
                 className="text-xs text-zinc-500"
@@ -186,8 +189,8 @@ export function TimeRangeSlider({ slots, selectedSlots, onSelect }: Props) {
               >
                 {slot.startTime}
               </div>
-            ) : null
-          )}
+            );
+          })}
           <div
             className="text-xs text-zinc-500"
             style={{ position: "absolute", right: 0 }}
