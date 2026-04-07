@@ -1,21 +1,17 @@
 "use client";
 
-type Props = {
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
   variant?: "primary" | "outline";
-  className?: string;
-  children: React.ReactNode;
 };
 
 export function LoadingButton({
   loading = false,
   disabled = false,
-  onClick,
   variant = "primary",
   className = "",
   children,
+  ...props
 }: Props) {
   const isDisabled = disabled || loading;
 
@@ -28,12 +24,14 @@ export function LoadingButton({
     <button
       type="button"
       disabled={isDisabled}
-      onClick={onClick}
+      aria-busy={loading}
       className={`relative inline-flex items-center justify-center px-4 py-2 text-sm transition-colors cursor-pointer ${base} ${className}`}
+      {...props}
     >
       {loading && (
         <svg
           className="absolute animate-spin h-4 w-4"
+          aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -53,7 +51,7 @@ export function LoadingButton({
           />
         </svg>
       )}
-      <span className={loading ? "invisible" : ""}>{children}</span>
+      <span className={loading ? "opacity-0" : ""}>{children}</span>
     </button>
   );
 }

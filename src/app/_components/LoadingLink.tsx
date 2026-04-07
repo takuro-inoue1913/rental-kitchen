@@ -34,6 +34,7 @@ export function LoadingLink({ href, className = "", children }: Props) {
       {loading && (
         <svg
           className="absolute animate-spin h-5 w-5"
+          aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -53,7 +54,7 @@ export function LoadingLink({ href, className = "", children }: Props) {
           />
         </svg>
       )}
-      <span className={loading ? "invisible" : ""}>{children}</span>
+      <span className={loading ? "opacity-0" : ""}>{children}</span>
     </Link>
   );
 }
