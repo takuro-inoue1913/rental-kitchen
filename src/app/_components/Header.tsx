@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SITE_NAME } from "@/lib/constants";
+import { LoadingLink } from "@/app/_components/LoadingLink";
 
 export function Header() {
   const pathname = usePathname();
@@ -24,12 +25,14 @@ export function Header() {
         >
           {SITE_NAME}
         </Link>
-        <Link
-          href="/reserve"
-          className="inline-flex h-9 items-center justify-center rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
-        >
-          予約する
-        </Link>
+        {!pathname.startsWith("/reserve") && (
+          <LoadingLink
+            href="/reserve"
+            className="h-9 rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
+          >
+            予約する
+          </LoadingLink>
+        )}
       </div>
     </header>
   );

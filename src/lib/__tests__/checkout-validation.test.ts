@@ -26,7 +26,8 @@ describe("parseCheckoutBody", () => {
   });
 
   it("optionIds 省略時は空配列になる", () => {
-    const { optionIds: _, ...bodyWithout } = validBody;
+    const { optionIds, ...bodyWithout } = validBody;
+    void optionIds;
     const result = parseCheckoutBody(bodyWithout);
     expect("data" in result).toBe(true);
     if ("data" in result) {
@@ -87,7 +88,8 @@ describe("parseCheckoutBody", () => {
   });
 
   it("guestName が未定義を拒否", () => {
-    const { guestName: _, ...bodyWithout } = validBody;
+    const { guestName, ...bodyWithout } = validBody;
+    void guestName;
     const result = parseCheckoutBody(bodyWithout);
     expect("error" in result).toBe(true);
   });
