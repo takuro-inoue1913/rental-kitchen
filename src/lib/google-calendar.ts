@@ -1,5 +1,6 @@
 import "server-only";
 import { google } from "googleapis";
+import { extractTime, resolveEndTime } from "./time-utils";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
@@ -32,23 +33,19 @@ export async function getCalendarEvents(date: string) {
       orderBy: "startTime",
     });
 
-    return (res.data.items ?? []).map((event) => ({
-      summary: event.summary ?? "",
-      startTime: extractTime(event.start?.dateTime ?? event.start?.date ?? ""),
-      endTime: extractTime(event.end?.dateTime ?? event.end?.date ?? ""),
-      isAllDay: !event.start?.dateTime,
-    }));
+    return (res.data.items ?? []).map((event) => {
+      const startDt = event.start?.dateTime ?? event.start?.date ?? "";
+      const endDt = event.end?.dateTime ?? event.end?.date ?? "";
+
+      return {
+        summary: event.summary ?? "",
+        startTime: extractTime(startDt),
+        endTime: resolveEndTime(startDt, endDt),
+        isAllDay: !event.start?.dateTime,
+      };
+    });
   } catch (error) {
     console.error("Google Calendar API error:", error);
     return [];
   }
-}
-
-/**
- * ISO 8601 日時文字列から HH:MM を抽出
- */
-function extractTime(dateTimeStr: string): string {
-  if (!dateTimeStr.includes("T")) return "00:00";
-  const timePart = dateTimeStr.split("T")[1];
-  return timePart.substring(0, 5);
 }
