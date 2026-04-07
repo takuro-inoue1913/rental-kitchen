@@ -239,7 +239,11 @@ export function ReservationFlow({ options }: Props) {
           </div>
         )}
         <div className="flex gap-3 mt-6">
-          <LoadingButton variant="outline" onClick={() => setStep("date")}>
+          <LoadingButton variant="outline" onClick={() => {
+            setSelectedDate(null);
+            setSelectedSlots([]);
+            setStep("date");
+          }}>
             戻る
           </LoadingButton>
           <LoadingButton
