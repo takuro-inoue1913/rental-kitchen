@@ -1,7 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  let body: { email?: string; password?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { error: "リクエストボディが不正です" },
+      { status: 400 }
+    );
+  }
+  const { email, password } = body;
 
   if (!email || !password) {
     return Response.json(
