@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TokushohoPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16 bg-white min-h-screen">
       <h1 className="text-2xl font-bold text-zinc-900 mb-10">
         特定商取引法に基づく表記
       </h1>
@@ -18,14 +18,14 @@ export default function TokushohoPage() {
         <Row label="代表者" value="井上拓郎" />
         <Row
           label="所在地"
-          value="東京都千代田区内神田3丁目4-11 サニー大友ビル地下1階"
+          value="〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301"
         />
         <Row label="電話番号" value="090-8399-4563" />
         <Row
           label="メールアドレス"
           value="takuro.inoue1988@gmail.com"
         />
-        <Row label="販売URL" value={`https://www.renospace-kitchen.com`} />
+        <Row label="販売URL" value="https://rental-kitchen.vercel.app/" />
         <Row
           label="販売価格"
           value="各プランページに税込価格で表示しております。"
