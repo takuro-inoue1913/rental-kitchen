@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
     return Response.json(
-      { error: "登録に失敗しました。もう一度お試しください" },
+      { error: `登録に失敗しました: ${error.message}` },
       { status: 500 }
     );
   }
