@@ -12,6 +12,9 @@ const GALLERY_IMAGES = [
   { src: "/images/space-long.jpeg", alt: "スペース全景" },
   { src: "/images/space-back.jpeg", alt: "キッチン＆カウンター" },
   { src: "/images/space-side.jpeg", alt: "ダイニング＆ラウンジ" },
+  { src: "/images/lighting-equipment.jpg", alt: "撮影用照明機材" },
+  { src: "/images/boardgames-1.jpeg", alt: "ボードゲーム" },
+  { src: "/images/boardgames-2.jpeg", alt: "ボードゲーム・カードゲーム" },
 ];
 
 export default function Home() {
@@ -188,6 +191,14 @@ export default function Home() {
 
       {/* フッター */}
       <footer className="border-t border-zinc-200 px-6 py-8 text-center text-sm text-zinc-500">
+        <nav className="mb-4">
+          <LoadingLink
+            href="/tokushoho"
+            className="text-zinc-500 underline underline-offset-4 hover:text-zinc-700"
+          >
+            特定商取引法に基づく表記
+          </LoadingLink>
+        </nav>
         <p>&copy; 2026 {SITE_NAME}. All rights reserved.</p>
       </footer>
     </div>
