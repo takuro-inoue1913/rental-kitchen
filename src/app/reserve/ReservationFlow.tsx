@@ -283,19 +283,9 @@ export function ReservationFlow({ options, user }: Props) {
           <LoadingButton variant="outline" onClick={() => setStep("time")}>
             戻る
           </LoadingButton>
-          {user ? (
-            <LoadingButton onClick={() => setStep("confirm")}>
-              確認へ
-            </LoadingButton>
-          ) : (
-            <LoadingButton
-              onClick={() => {
-                window.location.href = "/auth/login?redirect=/reserve";
-              }}
-            >
-              ログインして予約へ進む
-            </LoadingButton>
-          )}
+          <LoadingButton onClick={() => setStep("confirm")}>
+            確認へ
+          </LoadingButton>
         </div>
       </section>
 
@@ -342,17 +332,29 @@ export function ReservationFlow({ options, user }: Props) {
           <LoadingButton variant="outline" onClick={() => setStep("options")}>
             戻る
           </LoadingButton>
-          <LoadingButton
-            loading={submitting}
-            disabled={!user}
-            onClick={handleCheckout}
-            className="flex-1 py-3"
-          >
-            {`決済に進む（¥${totalPrice.toLocaleString()}）`}
-          </LoadingButton>
+          {user ? (
+            <LoadingButton
+              loading={submitting}
+              onClick={handleCheckout}
+              className="flex-1 py-3"
+            >
+              {`決済に進む（¥${totalPrice.toLocaleString()}）`}
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              onClick={() => {
+                window.location.href = "/auth/login?redirect=/reserve";
+              }}
+              className="flex-1 py-3"
+            >
+              ログインして決済に進む
+            </LoadingButton>
+          )}
         </div>
         <p className="text-xs text-zinc-500 text-center mt-3">
-          ※ 決済は Stripe の安全な決済画面で行われます
+          {user
+            ? "※ 決済は Stripe の安全な決済画面で行われます"
+            : "※ 決済にはログインまたは新規登録が必要です"}
         </p>
       </section>
     </div>
