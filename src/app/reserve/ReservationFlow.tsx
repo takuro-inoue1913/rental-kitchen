@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format, addDays, subDays, isBefore, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
@@ -16,11 +16,47 @@ type Option = Database["public"]["Tables"]["options"]["Row"];
 
 type Step = "date" | "time" | "options" | "confirm";
 
-type Props = {
-  options: Option[];
+type UserInfo = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string | null;
 };
 
-export function ReservationFlow({ options }: Props) {
+type Props = {
+  options: Option[];
+  user: UserInfo | null;
+};
+
+const STORAGE_KEY = "reservationState";
+
+type SavedState = {
+  step: Step;
+  selectedDate: string;
+  pricingType: PricingType;
+  dailyPrice: number | null;
+  slots: TimeSlot[];
+  selectedSlots: TimeSlot[];
+  selectedOptionIds: string[];
+};
+
+function saveState(state: SavedState) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+function loadAndClearState(): SavedState | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function ReservationFlow({ options, user }: Props) {
   const [step, setStep] = useState<Step>("date");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pricingType, setPricingType] = useState<PricingType>("hourly");
@@ -28,11 +64,23 @@ export function ReservationFlow({ options }: Props) {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
-  const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ログイン後に予約状態を復元
+  useEffect(() => {
+    const saved = loadAndClearState();
+    if (saved) {
+      setStep(saved.step);
+      setSelectedDate(new Date(saved.selectedDate));
+      setPricingType(saved.pricingType);
+      setDailyPrice(saved.dailyPrice);
+      setSlots(saved.slots);
+      setSelectedSlots(saved.selectedSlots);
+      setSelectedOptionIds(saved.selectedOptionIds);
+    }
+  }, []);
 
   const fetchSlots = useCallback(async (date: Date) => {
     setLoading(true);
@@ -89,7 +137,7 @@ export function ReservationFlow({ options }: Props) {
   }, []);
 
   const handleCheckout = useCallback(async () => {
-    if (!selectedDate || selectedSlots.length === 0 || !guestName || !guestEmail) return;
+    if (!selectedDate || selectedSlots.length === 0 || !user) return;
 
     // 非連続選択のチェック: 連続した枠のみ許可
     if (!areSlotsContiguous(selectedSlots)) {
@@ -112,8 +160,8 @@ export function ReservationFlow({ options }: Props) {
           startTime: sorted[0].startTime,
           endTime: sorted[sorted.length - 1].endTime,
           optionIds: selectedOptionIds,
-          guestEmail,
-          guestName,
+          guestEmail: user.email,
+          guestName: user.fullName,
         }),
       });
 
@@ -130,7 +178,7 @@ export function ReservationFlow({ options }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedDate, selectedSlots, selectedOptionIds, guestName, guestEmail]);
+  }, [selectedDate, selectedSlots, selectedOptionIds, user]);
 
   // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
   const selectedRangeCount =
@@ -298,40 +346,24 @@ export function ReservationFlow({ options }: Props) {
           />
         )}
 
-        {/* お客様情報 */}
-        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
-          <h3 className="text-base font-semibold text-zinc-900 mb-4">
-            お客様情報
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="guestName" className="block text-sm text-zinc-600 mb-1">
-                お名前
-              </label>
-              <input
-                id="guestName"
-                type="text"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                placeholder="山田 太郎"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 bg-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="guestEmail" className="block text-sm text-zinc-600 mb-1">
-                メールアドレス
-              </label>
-              <input
-                id="guestEmail"
-                type="email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="example@email.com"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 bg-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
+        {/* お客様情報（ログイン済みユーザー情報を表示） */}
+        {user && (
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
+            <h3 className="text-base font-semibold text-zinc-900 mb-3">
+              お客様情報
+            </h3>
+            <dl className="space-y-2 text-sm">
+              <div className="flex gap-3">
+                <dt className="text-zinc-500 shrink-0">お名前</dt>
+                <dd className="text-zinc-900">{user.fullName}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="text-zinc-500 shrink-0">メール</dt>
+                <dd className="text-zinc-900">{user.email}</dd>
+              </div>
+            </dl>
           </div>
-        </div>
+        )}
 
         {error && (
           <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
@@ -341,17 +373,40 @@ export function ReservationFlow({ options }: Props) {
           <LoadingButton variant="outline" onClick={() => setStep("options")}>
             戻る
           </LoadingButton>
-          <LoadingButton
-            loading={submitting}
-            disabled={!guestName || !guestEmail}
-            onClick={handleCheckout}
-            className="flex-1 py-3"
-          >
-            {`決済に進む（¥${totalPrice.toLocaleString()}）`}
-          </LoadingButton>
+          {user ? (
+            <LoadingButton
+              loading={submitting}
+              onClick={handleCheckout}
+              className="flex-1 py-3"
+            >
+              {`決済に進む（¥${totalPrice.toLocaleString()}）`}
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              onClick={() => {
+                if (selectedDate) {
+                  saveState({
+                    step: "confirm",
+                    selectedDate: selectedDate.toISOString(),
+                    pricingType,
+                    dailyPrice,
+                    slots,
+                    selectedSlots,
+                    selectedOptionIds,
+                  });
+                }
+                window.location.href = "/auth/login?redirect=/reserve";
+              }}
+              className="flex-1 py-3"
+            >
+              ログインして決済に進む
+            </LoadingButton>
+          )}
         </div>
         <p className="text-xs text-zinc-500 text-center mt-3">
-          ※ 決済は Stripe の安全な決済画面で行われます
+          {user
+            ? "※ 決済は Stripe の安全な決済画面で行われます"
+            : "※ 決済にはログインまたは新規登録が必要です"}
         </p>
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { parseCheckoutBody } from "@/lib/checkout-validation";
 import { timeToMinutes } from "@/lib/time-utils";
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
   }
   const { date, startTime, endTime, optionIds, guestEmail, guestName } =
     parsed.data;
+
+  // user_id はクライアントから受け取らず、サーバーセッションから取得
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  const userId = user?.id ?? null;
 
   const supabase = createAdminClient();
 
@@ -100,6 +106,8 @@ export async function POST(request: NextRequest) {
       source: "web",
       base_price: basePrice,
       total_price: totalPrice,
+      ...(userId ? { user_id: userId } : {}),
+      // user_id はサーバーセッションから取得（クライアント送信値は使用しない）
     })
     .select("id")
     .single();
@@ -150,16 +158,15 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const origin = request.headers.get("origin") || request.nextUrl.origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       customer_email: guestEmail,
       metadata: { reservation_id: reservation.id },
-      success_url: `${siteUrl}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/reserve?cancelled=true`,
+      success_url: `${origin}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/reserve?cancelled=true`,
       expires_at:
         Math.floor(Date.now() / 1000) + RESERVATION_EXPIRY_MINUTES * 60,
     });
