@@ -18,15 +18,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
+  // admin client でメール確認済みユーザーを作成（確認メール不要）
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
   });
 
   if (error) {
-    if (error.message.includes("already registered")) {
+    if (error.message.includes("already been registered")) {
       return Response.json(
         { error: "このメールアドレスは既に登録されています" },
         { status: 409 }
@@ -44,21 +46,27 @@ export async function POST(request: Request) {
     );
   }
 
-  // handle_new_user trigger は phone を保存しないため admin client で更新
+  // phone を profiles に保存
   if (phone && data.user) {
-    const admin = createAdminClient();
     await admin
       .from("profiles")
       .update({ phone })
       .eq("id", data.user.id);
   }
 
-  // メール確認が必要な場合
-  const needsConfirmation =
-    data.user && data.user.identities?.length === 0;
-
-  return Response.json({
-    success: true,
-    needsConfirmation: !!needsConfirmation,
+  // 作成後にログインしてセッション Cookie をセット
+  const supabase = await createClient();
+  const { error: loginError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
   });
+
+  if (loginError) {
+    return Response.json(
+      { error: "登録は完了しましたが、自動ログインに失敗しました。ログインページからログインしてください" },
+      { status: 200 }
+    );
+  }
+
+  return Response.json({ success: true });
 }

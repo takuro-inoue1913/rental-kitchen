@@ -16,7 +16,6 @@ export function RegisterForm() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [registered, setRegistered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,36 +45,13 @@ export function RegisterForm() {
         return;
       }
 
-      if (data.needsConfirmation) {
-        setRegistered(true);
-      } else {
-        window.location.href = redirect;
-      }
+      window.location.href = redirect;
     } catch {
       setError("通信エラーが発生しました");
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (registered) {
-    return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
-        <p className="text-lg font-semibold text-zinc-900 mb-2">
-          確認メールを送信しました
-        </p>
-        <p className="text-sm text-zinc-600">
-          {email} に送信された確認メールのリンクをクリックして、登録を完了してください。
-        </p>
-        <Link
-          href="/auth/login"
-          className="inline-block mt-6 text-sm text-amber-600 hover:text-amber-700 underline underline-offset-4"
-        >
-          ログインページへ
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
