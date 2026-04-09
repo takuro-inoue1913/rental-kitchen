@@ -32,8 +32,14 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
+    if (error.message.includes("rate limit")) {
+      return Response.json(
+        { error: "短時間に多くのリクエストがありました。しばらく待ってから再度お試しください" },
+        { status: 429 }
+      );
+    }
     return Response.json(
-      { error: `登録に失敗しました: ${error.message}` },
+      { error: "登録に失敗しました。もう一度お試しください" },
       { status: 500 }
     );
   }
