@@ -188,6 +188,14 @@ export default function Home() {
 
       {/* フッター */}
       <footer className="border-t border-zinc-200 px-6 py-8 text-center text-sm text-zinc-500">
+        <nav className="mb-4">
+          <LoadingLink
+            href="/tokushoho"
+            className="text-zinc-500 underline underline-offset-4 hover:text-zinc-700"
+          >
+            特定商取引法に基づく表記
+          </LoadingLink>
+        </nav>
         <p>&copy; 2026 {SITE_NAME}. All rights reserved.</p>
       </footer>
     </div>
