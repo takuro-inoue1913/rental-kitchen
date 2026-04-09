@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SITE_NAME } from "@/lib/constants";
 import { LoadingLink } from "@/app/_components/LoadingLink";
 import { createClient } from "@/lib/supabase/client";
@@ -13,7 +13,6 @@ type Props = {
 
 export function HeaderClient({ user }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +27,7 @@ export function HeaderClient({ user }: Props) {
     const supabase = createClient();
     await supabase.auth.signOut();
     setMenuOpen(false);
-    router.refresh();
-    router.push("/");
+    window.location.href = "/";
   };
 
   useEffect(() => {
