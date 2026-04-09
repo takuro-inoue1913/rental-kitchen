@@ -2,7 +2,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
-  const { email, password, fullName, phone } = await request.json();
+  let body: { email?: string; password?: string; fullName?: string; phone?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { error: "リクエストボディが不正です" },
+      { status: 400 }
+    );
+  }
+  const { email, password, fullName, phone } = body;
 
   if (!email || !password || !fullName) {
     return Response.json(
@@ -48,10 +57,13 @@ export async function POST(request: Request) {
 
   // phone を profiles に保存
   if (phone && data.user) {
-    await admin
+    const { error: phoneError } = await admin
       .from("profiles")
       .update({ phone })
       .eq("id", data.user.id);
+    if (phoneError) {
+      console.error("Profile phone update failed:", phoneError);
+    }
   }
 
   // 作成後にログインしてセッション Cookie をセット
