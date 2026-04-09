@@ -14,6 +14,7 @@ export type CheckoutBody = {
   optionIds: string[];
   guestEmail: string;
   guestName: string;
+  userId?: string;
 };
 
 export function parseCheckoutBody(
@@ -54,6 +55,11 @@ export function parseCheckoutBody(
     return { error: "endTime は startTime より後である必要があります" };
   }
 
+  const userId =
+    typeof b.userId === "string" && b.userId.length > 0
+      ? b.userId
+      : undefined;
+
   return {
     data: {
       date: b.date,
@@ -62,6 +68,7 @@ export function parseCheckoutBody(
       optionIds: optionIds as string[],
       guestEmail: b.guestEmail,
       guestName: b.guestName,
+      userId,
     },
   };
 }

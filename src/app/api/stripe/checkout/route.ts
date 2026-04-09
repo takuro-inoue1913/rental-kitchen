@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   if ("error" in parsed) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
-  const { date, startTime, endTime, optionIds, guestEmail, guestName } =
+  const { date, startTime, endTime, optionIds, guestEmail, guestName, userId } =
     parsed.data;
 
   const supabase = createAdminClient();
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       source: "web",
       base_price: basePrice,
       total_price: totalPrice,
+      ...(userId ? { user_id: userId } : {}),
     })
     .select("id")
     .single();

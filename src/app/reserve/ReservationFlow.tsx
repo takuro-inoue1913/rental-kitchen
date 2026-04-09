@@ -16,11 +16,19 @@ type Option = Database["public"]["Tables"]["options"]["Row"];
 
 type Step = "date" | "time" | "options" | "confirm";
 
-type Props = {
-  options: Option[];
+type UserInfo = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string | null;
 };
 
-export function ReservationFlow({ options }: Props) {
+type Props = {
+  options: Option[];
+  user: UserInfo | null;
+};
+
+export function ReservationFlow({ options, user }: Props) {
   const [step, setStep] = useState<Step>("date");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pricingType, setPricingType] = useState<PricingType>("hourly");
@@ -28,8 +36,8 @@ export function ReservationFlow({ options }: Props) {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
-  const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
+  const [guestName, setGuestName] = useState(user?.fullName ?? "");
+  const [guestEmail, setGuestEmail] = useState(user?.email ?? "");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +122,7 @@ export function ReservationFlow({ options }: Props) {
           optionIds: selectedOptionIds,
           guestEmail,
           guestName,
+          ...(user ? { userId: user.id } : {}),
         }),
       });
 
@@ -331,6 +340,17 @@ export function ReservationFlow({ options }: Props) {
               />
             </div>
           </div>
+          {!user && (
+            <p className="mt-3 text-xs text-zinc-500">
+              <a
+                href="/auth/login?redirect=/reserve"
+                className="text-amber-600 hover:text-amber-700 underline underline-offset-2"
+              >
+                ログイン
+              </a>
+              すると次回から入力が省略されます
+            </p>
+          )}
         </div>
 
         {error && (
