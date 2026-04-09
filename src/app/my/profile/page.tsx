@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MyPageNav } from "../_components/MyPageNav";
 import { ProfileForm } from "./ProfileForm";
@@ -15,14 +16,18 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/auth/login?redirect=/my/profile");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, phone")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .single();
 
   // Google OAuth ユーザーはパスワード変更不可
-  const hasPassword = user!.app_metadata?.providers?.includes("email") ?? false;
+  const hasPassword = user.app_metadata?.providers?.includes("email") ?? false;
 
   return (
     <div className="flex flex-col flex-1 bg-white">
@@ -31,7 +36,7 @@ export default async function ProfilePage() {
         <ProfileForm
           defaultFullName={profile?.full_name ?? ""}
           defaultPhone={profile?.phone ?? ""}
-          email={user!.email ?? ""}
+          email={user.email ?? ""}
           hasPassword={hasPassword}
         />
       </div>
