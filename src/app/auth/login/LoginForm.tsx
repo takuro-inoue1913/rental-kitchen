@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LoadingButton } from "@/app/_components/LoadingButton";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/";
 
@@ -33,8 +32,7 @@ export function LoginForm() {
         return;
       }
 
-      router.refresh();
-      router.push(redirect);
+      window.location.href = redirect;
     } catch {
       setError("通信エラーが発生しました");
     } finally {
