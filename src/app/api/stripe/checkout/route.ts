@@ -1,5 +1,6 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { parseCheckoutBody } from "@/lib/checkout-validation";
 import { timeToMinutes } from "@/lib/time-utils";
@@ -21,8 +22,13 @@ export async function POST(request: NextRequest) {
   if ("error" in parsed) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
-  const { date, startTime, endTime, optionIds, guestEmail, guestName, userId } =
+  const { date, startTime, endTime, optionIds, guestEmail, guestName } =
     parsed.data;
+
+  // user_id はクライアントから受け取らず、サーバーセッションから取得
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  const userId = user?.id ?? null;
 
   const supabase = createAdminClient();
 
@@ -101,6 +107,7 @@ export async function POST(request: NextRequest) {
       base_price: basePrice,
       total_price: totalPrice,
       ...(userId ? { user_id: userId } : {}),
+      // user_id はサーバーセッションから取得（クライアント送信値は使用しない）
     })
     .select("id")
     .single();

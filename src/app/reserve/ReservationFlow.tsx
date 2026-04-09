@@ -120,7 +120,6 @@ export function ReservationFlow({ options, user }: Props) {
           optionIds: selectedOptionIds,
           guestEmail: user.email,
           guestName: user.fullName,
-          userId: user.id,
         }),
       });
 
