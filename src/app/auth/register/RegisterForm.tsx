@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export function RegisterForm() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") ?? "/";
+  const rawRedirect = searchParams.get("redirect") ?? "/";
+  const redirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
