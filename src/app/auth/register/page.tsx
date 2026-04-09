@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { RegisterForm } from "./RegisterForm";
 
 export const metadata: Metadata = {
@@ -12,7 +13,9 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold text-zinc-900 mb-8 text-center">
           新規登録
         </h1>
-        <RegisterForm />
+        <Suspense>
+          <RegisterForm />
+        </Suspense>
       </div>
     </div>
   );

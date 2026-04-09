@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LoadingButton } from "@/app/_components/LoadingButton";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -49,7 +51,7 @@ export function RegisterForm() {
         setRegistered(true);
       } else {
         router.refresh();
-        router.push("/");
+        router.push(redirect);
       }
     } catch {
       setError("通信エラーが発生しました");
@@ -169,7 +171,7 @@ export function RegisterForm() {
       <p className="text-sm text-center text-zinc-500">
         既にアカウントをお持ちの方は{" "}
         <Link
-          href="/auth/login"
+          href={`/auth/login${redirect !== "/" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
           className="text-amber-600 hover:text-amber-700 underline underline-offset-4"
         >
           ログイン

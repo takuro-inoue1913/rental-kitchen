@@ -90,7 +90,7 @@ export function LoginForm() {
       <p className="text-sm text-center text-zinc-500">
         アカウントをお持ちでない方は{" "}
         <Link
-          href="/auth/register"
+          href={`/auth/register${redirect !== "/" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
           className="text-amber-600 hover:text-amber-700 underline underline-offset-4"
         >
           新規登録
