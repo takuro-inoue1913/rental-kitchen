@@ -36,8 +36,6 @@ export function ReservationFlow({ options, user }: Props) {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
-  const [guestName, setGuestName] = useState(user?.fullName ?? "");
-  const [guestEmail, setGuestEmail] = useState(user?.email ?? "");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +95,7 @@ export function ReservationFlow({ options, user }: Props) {
   }, []);
 
   const handleCheckout = useCallback(async () => {
-    if (!selectedDate || selectedSlots.length === 0 || !guestName || !guestEmail) return;
+    if (!selectedDate || selectedSlots.length === 0 || !user) return;
 
     // 非連続選択のチェック: 連続した枠のみ許可
     if (!areSlotsContiguous(selectedSlots)) {
@@ -120,9 +118,9 @@ export function ReservationFlow({ options, user }: Props) {
           startTime: sorted[0].startTime,
           endTime: sorted[sorted.length - 1].endTime,
           optionIds: selectedOptionIds,
-          guestEmail,
-          guestName,
-          ...(user ? { userId: user.id } : {}),
+          guestEmail: user.email,
+          guestName: user.fullName,
+          userId: user.id,
         }),
       });
 
@@ -139,7 +137,7 @@ export function ReservationFlow({ options, user }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedDate, selectedSlots, selectedOptionIds, guestName, guestEmail]);
+  }, [selectedDate, selectedSlots, selectedOptionIds, user]);
 
   // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
   const selectedRangeCount =
@@ -285,9 +283,19 @@ export function ReservationFlow({ options, user }: Props) {
           <LoadingButton variant="outline" onClick={() => setStep("time")}>
             戻る
           </LoadingButton>
-          <LoadingButton onClick={() => setStep("confirm")}>
-            確認へ
-          </LoadingButton>
+          {user ? (
+            <LoadingButton onClick={() => setStep("confirm")}>
+              確認へ
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              onClick={() => {
+                window.location.href = "/auth/login?redirect=/reserve";
+              }}
+            >
+              ログインして予約へ進む
+            </LoadingButton>
+          )}
         </div>
       </section>
 
@@ -307,51 +315,24 @@ export function ReservationFlow({ options, user }: Props) {
           />
         )}
 
-        {/* お客様情報 */}
-        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
-          <h3 className="text-base font-semibold text-zinc-900 mb-4">
-            お客様情報
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="guestName" className="block text-sm text-zinc-600 mb-1">
-                お名前
-              </label>
-              <input
-                id="guestName"
-                type="text"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                placeholder="山田 太郎"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 bg-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="guestEmail" className="block text-sm text-zinc-600 mb-1">
-                メールアドレス
-              </label>
-              <input
-                id="guestEmail"
-                type="email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="example@email.com"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 bg-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
+        {/* お客様情報（ログイン済みユーザー情報を表示） */}
+        {user && (
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
+            <h3 className="text-base font-semibold text-zinc-900 mb-3">
+              お客様情報
+            </h3>
+            <dl className="space-y-2 text-sm">
+              <div className="flex gap-3">
+                <dt className="text-zinc-500 shrink-0">お名前</dt>
+                <dd className="text-zinc-900">{user.fullName}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="text-zinc-500 shrink-0">メール</dt>
+                <dd className="text-zinc-900">{user.email}</dd>
+              </div>
+            </dl>
           </div>
-          {!user && (
-            <p className="mt-3 text-xs text-zinc-500">
-              <a
-                href="/auth/login?redirect=/reserve"
-                className="text-amber-600 hover:text-amber-700 underline underline-offset-2"
-              >
-                ログイン
-              </a>
-              すると次回から入力が省略されます
-            </p>
-          )}
-        </div>
+        )}
 
         {error && (
           <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
@@ -363,7 +344,7 @@ export function ReservationFlow({ options, user }: Props) {
           </LoadingButton>
           <LoadingButton
             loading={submitting}
-            disabled={!guestName || !guestEmail}
+            disabled={!user}
             onClick={handleCheckout}
             className="flex-1 py-3"
           >
