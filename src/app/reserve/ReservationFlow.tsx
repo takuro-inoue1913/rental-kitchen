@@ -28,14 +28,46 @@ type Props = {
   user: UserInfo | null;
 };
 
+const STORAGE_KEY = "reservationState";
+
+type SavedState = {
+  step: Step;
+  selectedDate: string;
+  pricingType: PricingType;
+  dailyPrice: number | null;
+  slots: TimeSlot[];
+  selectedSlots: TimeSlot[];
+  selectedOptionIds: string[];
+};
+
+function saveState(state: SavedState) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+function loadAndClearState(): SavedState | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function ReservationFlow({ options, user }: Props) {
-  const [step, setStep] = useState<Step>("date");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [pricingType, setPricingType] = useState<PricingType>("hourly");
-  const [dailyPrice, setDailyPrice] = useState<number | null>(null);
-  const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
+  const saved = typeof window !== "undefined" ? loadAndClearState() : null;
+
+  const [step, setStep] = useState<Step>(saved?.step ?? "date");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    saved?.selectedDate ? new Date(saved.selectedDate) : null
+  );
+  const [pricingType, setPricingType] = useState<PricingType>(saved?.pricingType ?? "hourly");
+  const [dailyPrice, setDailyPrice] = useState<number | null>(saved?.dailyPrice ?? null);
+  const [slots, setSlots] = useState<TimeSlot[]>(saved?.slots ?? []);
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>(saved?.selectedSlots ?? []);
+  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(saved?.selectedOptionIds ?? []);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -342,6 +374,17 @@ export function ReservationFlow({ options, user }: Props) {
           ) : (
             <LoadingButton
               onClick={() => {
+                if (selectedDate) {
+                  saveState({
+                    step: "confirm",
+                    selectedDate: selectedDate.toISOString(),
+                    pricingType,
+                    dailyPrice,
+                    slots,
+                    selectedSlots,
+                    selectedOptionIds,
+                  });
+                }
                 window.location.href = "/auth/login?redirect=/reserve";
               }}
               className="flex-1 py-3"
