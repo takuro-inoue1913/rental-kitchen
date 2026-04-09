@@ -151,16 +151,15 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const origin = request.headers.get("origin") || request.nextUrl.origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       customer_email: guestEmail,
       metadata: { reservation_id: reservation.id },
-      success_url: `${siteUrl}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/reserve?cancelled=true`,
+      success_url: `${origin}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/reserve?cancelled=true`,
       expires_at:
         Math.floor(Date.now() / 1000) + RESERVATION_EXPIRY_MINUTES * 60,
     });
