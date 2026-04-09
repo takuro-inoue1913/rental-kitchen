@@ -12,6 +12,9 @@ const GALLERY_IMAGES = [
   { src: "/images/space-long.jpeg", alt: "スペース全景" },
   { src: "/images/space-back.jpeg", alt: "キッチン＆カウンター" },
   { src: "/images/space-side.jpeg", alt: "ダイニング＆ラウンジ" },
+  { src: "/images/lighting-equipment.jpg", alt: "撮影用照明機材" },
+  { src: "/images/boardgames-1.jpeg", alt: "ボードゲーム" },
+  { src: "/images/boardgames-2.jpeg", alt: "ボードゲーム・カードゲーム" },
 ];
 
 export default function Home() {
