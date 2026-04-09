@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SITE_NAME } from "@/lib/constants";
 import Link from "next/link";
 
 export const metadata: Metadata = {
