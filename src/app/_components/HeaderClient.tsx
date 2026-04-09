@@ -84,7 +84,7 @@ export function HeaderClient({ user }: Props) {
                     onClick={() => setMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                   >
-                    予約履歴
+                    マイページ
                   </Link>
                   <button
                     type="button"
