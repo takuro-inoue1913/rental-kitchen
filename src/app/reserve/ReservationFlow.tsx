@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format, addDays, subDays, isBefore, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
@@ -57,20 +57,30 @@ function loadAndClearState(): SavedState | null {
 }
 
 export function ReservationFlow({ options, user }: Props) {
-  const saved = typeof window !== "undefined" ? loadAndClearState() : null;
-
-  const [step, setStep] = useState<Step>(saved?.step ?? "date");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(
-    saved?.selectedDate ? new Date(saved.selectedDate) : null
-  );
-  const [pricingType, setPricingType] = useState<PricingType>(saved?.pricingType ?? "hourly");
-  const [dailyPrice, setDailyPrice] = useState<number | null>(saved?.dailyPrice ?? null);
-  const [slots, setSlots] = useState<TimeSlot[]>(saved?.slots ?? []);
-  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>(saved?.selectedSlots ?? []);
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(saved?.selectedOptionIds ?? []);
+  const [step, setStep] = useState<Step>("date");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [pricingType, setPricingType] = useState<PricingType>("hourly");
+  const [dailyPrice, setDailyPrice] = useState<number | null>(null);
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
+  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ログイン後に予約状態を復元
+  useEffect(() => {
+    const saved = loadAndClearState();
+    if (saved) {
+      setStep(saved.step);
+      setSelectedDate(new Date(saved.selectedDate));
+      setPricingType(saved.pricingType);
+      setDailyPrice(saved.dailyPrice);
+      setSlots(saved.slots);
+      setSelectedSlots(saved.selectedSlots);
+      setSelectedOptionIds(saved.selectedOptionIds);
+    }
+  }, []);
 
   const fetchSlots = useCallback(async (date: Date) => {
     setLoading(true);
