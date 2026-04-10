@@ -91,7 +91,7 @@ export function PricingForm() {
               onChange={(e) =>
                 updateRule(rule.id, "pricing_type", e.target.value)
               }
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
             >
               <option value="daily">日単位</option>
               <option value="hourly">時間単位</option>

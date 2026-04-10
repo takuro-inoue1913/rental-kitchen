@@ -139,14 +139,14 @@ export function OptionsManager() {
             placeholder="名前"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="flex-1 min-w-[120px] rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            className="flex-1 min-w-[120px] rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           />
           <input
             type="text"
             placeholder="説明（任意）"
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
-            className="flex-1 min-w-[120px] rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            className="flex-1 min-w-[120px] rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           />
           <input
             type="number"
