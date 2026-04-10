@@ -97,6 +97,10 @@ export async function POST(request: NextRequest) {
           : null;
       if (!paymentIntentId) break;
 
+      // 部分返金（調整返金等）では予約をキャンセルしない
+      // 全額返金時のみキャンセル扱いにする
+      if (charge.amount_refunded < charge.amount) break;
+
       const { data: reservation } = await supabase
         .from("reservations")
         .select("id, status")
