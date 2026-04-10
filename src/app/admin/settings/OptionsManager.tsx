@@ -59,7 +59,7 @@ export function OptionsManager() {
   }
 
   async function handleAdd() {
-    if (!newName || !newPrice) return;
+    if (!newName || newPrice === "") return;
     setAdding(true);
     setMessage(null);
     const res = await fetch("/api/admin/options", {
