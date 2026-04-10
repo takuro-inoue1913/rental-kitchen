@@ -8,19 +8,23 @@ export type CancellationPolicy = {
 };
 
 /**
- * Asia/Tokyo の「今日」の 0:00 から予約日の 0:00 までの暦日数を返す。
+ * Asia/Tokyo の「今日」から予約日までの暦日数を返す。
  * 当日 → 0、過去 → 負数。
+ * タイムゾーン非依存: 年月日を数値化して差分を取るため DST の影響を受けない。
  */
 export function daysUntilReservation(
   reservationDate: string,
   now?: Date,
 ): number {
   const current = now ?? new Date();
-  // Asia/Tokyo の日付文字列を取得して比較
+  // Asia/Tokyo の日付文字列を取得
   const todayStr = current.toLocaleDateString("sv-SE", { timeZone: TIMEZONE });
-  const todayMs = new Date(todayStr + "T00:00:00").getTime();
-  const reservationMs = new Date(reservationDate + "T00:00:00").getTime();
-  return Math.round((reservationMs - todayMs) / (1000 * 60 * 60 * 24));
+  // YYYY-MM-DD を数値パースして日数差を計算（TZ 非依存）
+  const [ty, tm, td] = todayStr.split("-").map(Number);
+  const [ry, rm, rd] = reservationDate.split("-").map(Number);
+  const todayDays = Date.UTC(ty, tm - 1, td) / (1000 * 60 * 60 * 24);
+  const reservationDays = Date.UTC(ry, rm - 1, rd) / (1000 * 60 * 60 * 24);
+  return reservationDays - todayDays;
 }
 
 /**
