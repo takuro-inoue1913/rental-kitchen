@@ -67,6 +67,16 @@ export async function PUT(request: NextRequest) {
     return Response.json({ error: "IDは必須です" }, { status: 400 });
   }
 
+  if (price !== undefined && (typeof price !== "number" || price < 0)) {
+    return Response.json({ error: "料金は0以上の数値で指定してください" }, { status: 400 });
+  }
+  if (name !== undefined && typeof name !== "string") {
+    return Response.json({ error: "名前は文字列で指定してください" }, { status: 400 });
+  }
+  if (is_active !== undefined && typeof is_active !== "boolean") {
+    return Response.json({ error: "is_active は真偽値で指定してください" }, { status: 400 });
+  }
+
   const { error } = await auth.adminClient
     .from("options")
     .update({
