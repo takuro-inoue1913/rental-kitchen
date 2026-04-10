@@ -13,8 +13,9 @@ export default async function MyLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // middleware が正しいパス付きでリダイレクト済みだが、防御的にチェック
   if (!user) {
-    redirect("/auth/login?redirect=/my/reservations");
+    redirect("/auth/login?redirect=/my");
   }
 
   return (
