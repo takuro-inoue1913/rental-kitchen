@@ -73,12 +73,15 @@ export function ReservationFlow({ options, user }: Props) {
     Record<string, AvailabilityResponse>
   >({});
   const fetchedMonthsRef = useRef<Set<string>>(new Set());
+  const [monthLoading, setMonthLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const fetchMonth = useCallback(async (month: Date) => {
     const monthStr = format(month, "yyyy-MM");
     if (fetchedMonthsRef.current.has(monthStr)) return;
     fetchedMonthsRef.current.add(monthStr);
 
+    setMonthLoading(true);
     try {
       const res = await fetch(`/api/availability/month?month=${monthStr}`);
       const data: Record<string, AvailabilityResponse> = await res.json();
@@ -86,6 +89,9 @@ export function ReservationFlow({ options, user }: Props) {
     } catch {
       // 失敗時はリトライ可能にする
       fetchedMonthsRef.current.delete(monthStr);
+    } finally {
+      setMonthLoading(false);
+      setInitialLoadDone(true);
     }
   }, []);
 
@@ -271,13 +277,39 @@ export function ReservationFlow({ options, user }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 mb-4">
           日付を選択
         </h2>
-        <div className="flex justify-center">
-          <DatePicker
-            selectedDate={selectedDate}
-            onSelect={handleDateSelect}
-            onMonthChange={handleMonthChange}
-          />
-        </div>
+        {!initialLoadDone ? (
+          <div className="flex justify-center">
+            <div className="w-full max-w-sm animate-pulse">
+              {/* ヘッダー（前月・月名・次月） */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-9 w-16 rounded-lg bg-zinc-200" />
+                <div className="h-6 w-28 rounded bg-zinc-200" />
+                <div className="h-9 w-16 rounded-lg bg-zinc-200" />
+              </div>
+              {/* 曜日ヘッダー */}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="h-4 rounded bg-zinc-200 mx-auto w-6" />
+                ))}
+              </div>
+              {/* 日付グリッド */}
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-lg bg-zinc-100" />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <DatePicker
+              selectedDate={selectedDate}
+              onSelect={handleDateSelect}
+              onMonthChange={handleMonthChange}
+              disabled={monthLoading}
+            />
+          </div>
+        )}
       </section>
 
       {/* Step 2: 時間枠選択 */}

@@ -23,9 +23,10 @@ type Props = {
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
   onMonthChange?: (month: Date) => void;
+  disabled?: boolean;
 };
 
-export function DatePicker({ selectedDate, onSelect, onMonthChange }: Props) {
+export function DatePicker({ selectedDate, onSelect, onMonthChange, disabled = false }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const handleMonthChange = (next: Date) => {
@@ -86,7 +87,7 @@ export function DatePicker({ selectedDate, onSelect, onMonthChange }: Props) {
           const isPast = isBefore(day, today);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
-          const disabled = !isCurrentMonth || isPast;
+          const dayDisabled = !isCurrentMonth || isPast || disabled;
           const dow = getDay(day);
           const isSunday = dow === 0;
           const isSaturday = dow === 6;
@@ -94,7 +95,7 @@ export function DatePicker({ selectedDate, onSelect, onMonthChange }: Props) {
 
           // 日付テキスト色（選択中・無効以外）
           const dayColor =
-            disabled
+            dayDisabled
               ? isSunday || isHoliday
                 ? "text-red-300"
                 : isSaturday
@@ -112,12 +113,12 @@ export function DatePicker({ selectedDate, onSelect, onMonthChange }: Props) {
             <button
               key={day.toISOString()}
               type="button"
-              disabled={disabled}
+              disabled={dayDisabled}
               onClick={() => onSelect(day)}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm
                 transition-colors
-                ${disabled ? "cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
+                ${dayDisabled ? "cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
                 ${isSelected ? "bg-amber-600 text-white hover:bg-amber-700" : ""}
                 ${isToday && !isSelected ? "ring-1 ring-amber-400" : ""}
                 ${dayColor}
