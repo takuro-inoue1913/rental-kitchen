@@ -17,11 +17,16 @@ export default async function AdminLayout({
   }
 
   // middleware の防御に加え防御的に is_admin チェック
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileError) {
+    console.error("Admin layout: profile fetch error:", profileError);
+    redirect("/");
+  }
 
   if (!profile?.is_admin) {
     redirect("/");
