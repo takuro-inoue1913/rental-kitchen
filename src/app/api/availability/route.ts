@@ -1,33 +1,21 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCalendarEvents } from "@/lib/google-calendar";
-import { timeToMinutes, minutesToTime } from "@/lib/time-utils";
 import { getEffectiveDayOfWeek } from "@/lib/date-utils";
-import type { PricingType } from "@/lib/types";
+import {
+  generateAvailability,
+  emptyAvailability,
+} from "@/lib/availability";
 import type { Database } from "@/lib/database.types";
 import { NextRequest } from "next/server";
 
 type AvailabilityRule = Database["public"]["Tables"]["availability_rules"]["Row"];
 
-export type TimeSlot = {
-  startTime: string;
-  endTime: string;
-  price: number;
-  available: boolean;
-};
-
-export type TimeBlock = {
-  startTime: string;
-  endTime: string;
-  price: number;
-};
-
-export type AvailabilityResponse = {
-  date: string;
-  pricingType: PricingType;
-  dailyPrice: number | null;
-  slots: TimeSlot[];
-  blocks: TimeBlock[];
-};
+// 型の再エクスポート（既存の import 先との互換性維持）
+export type {
+  TimeSlot,
+  TimeBlock,
+  AvailabilityResponse,
+} from "@/lib/availability";
 
 /**
  * GET /api/availability?date=2026-04-10
@@ -41,7 +29,7 @@ export async function GET(request: NextRequest) {
   if (!dateParam || !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
     return Response.json(
       { error: "date パラメータが必要です（YYYY-MM-DD 形式）" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -55,13 +43,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (blockedDate) {
-    return Response.json({
-      date: dateParam,
-      pricingType: "hourly",
-      dailyPrice: null,
-      slots: [],
-      blocks: [],
-    });
+    return Response.json(emptyAvailability(dateParam));
   }
 
   // 曜日を取得（祝日は日曜扱い → 土日祝で同じ料金体系）
@@ -76,97 +58,14 @@ export async function GET(request: NextRequest) {
     .returns<AvailabilityRule[]>();
 
   if (!rules || rules.length === 0) {
-    return Response.json({
-      date: dateParam,
-      pricingType: "hourly",
-      dailyPrice: null,
-      slots: [],
-      blocks: [],
-    });
+    return Response.json(emptyAvailability(dateParam));
   }
 
   const rule = rules[0];
-  const pricingType = rule.pricing_type as PricingType;
 
   // Google カレンダーのイベントのみで空き判定
   // TODO: Phase 6 で双方向同期実装後、Supabase の reservations も含める
   const calendarEvents = await getCalendarEvents(dateParam);
 
-  const bookedRanges = calendarEvents
-    .filter((e) => !e.isAllDay)
-    .map((e) => ({
-      start: e.startTime,
-      end: e.endTime,
-    }));
-
-  const hasAllDayEvent = calendarEvents.some((e) => e.isAllDay);
-
-  // 時間枠を生成（daily / hourly 共通）
-  const slots: TimeSlot[] = [];
-  const startMinutes = timeToMinutes(rule.start_time);
-  const endMinutes = timeToMinutes(rule.end_time);
-  const duration = rule.slot_duration_minutes;
-
-  for (let m = startMinutes; m + duration <= endMinutes; m += duration) {
-    const slotStart = minutesToTime(m);
-    const slotEnd = minutesToTime(m + duration);
-
-    const isBooked =
-      hasAllDayEvent ||
-      bookedRanges.some(
-        (r) =>
-          timeToMinutes(r.start) < m + duration && timeToMinutes(r.end) > m
-      );
-
-    slots.push({
-      startTime: slotStart,
-      endTime: slotEnd,
-      price: pricingType === "daily" ? 0 : rule.price_per_slot,
-      available: !isBooked,
-    });
-  }
-
-  slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-  // daily の場合: 連続する空き枠をブロックにまとめる
-  const blocks: TimeBlock[] = [];
-  if (pricingType === "daily") {
-    let blockStart: string | null = null;
-    let blockEnd: string | null = null;
-
-    for (const slot of slots) {
-      if (slot.available) {
-        if (blockStart === null) {
-          blockStart = slot.startTime;
-        }
-        blockEnd = slot.endTime;
-      } else {
-        if (blockStart !== null && blockEnd !== null) {
-          blocks.push({
-            startTime: blockStart,
-            endTime: blockEnd,
-            price: rule.price_per_slot,
-          });
-          blockStart = null;
-          blockEnd = null;
-        }
-      }
-    }
-    // 最後のブロック
-    if (blockStart !== null && blockEnd !== null) {
-      blocks.push({
-        startTime: blockStart,
-        endTime: blockEnd,
-        price: rule.price_per_slot,
-      });
-    }
-  }
-
-  return Response.json({
-    date: dateParam,
-    pricingType,
-    dailyPrice: pricingType === "daily" ? rule.price_per_slot : null,
-    slots,
-    blocks,
-  } satisfies AvailabilityResponse);
+  return Response.json(generateAvailability(dateParam, rule, calendarEvents));
 }

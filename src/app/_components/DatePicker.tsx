@@ -22,10 +22,17 @@ import holidayJp from "@holiday-jp/holiday_jp";
 type Props = {
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
+  onMonthChange?: (month: Date) => void;
+  disabled?: boolean;
 };
 
-export function DatePicker({ selectedDate, onSelect }: Props) {
+export function DatePicker({ selectedDate, onSelect, onMonthChange, disabled = false }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const handleMonthChange = (next: Date) => {
+    setCurrentMonth(next);
+    onMonthChange?.(next);
+  };
   const today = startOfDay(new Date());
 
   const monthStart = startOfMonth(currentMonth);
@@ -42,7 +49,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
-          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(subMonths(currentMonth, 1))}
           className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
           &lt; 前月
@@ -52,7 +59,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
         </h3>
         <button
           type="button"
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
           className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
           次月 &gt;
@@ -80,7 +87,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
           const isPast = isBefore(day, today);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
-          const disabled = !isCurrentMonth || isPast;
+          const dayDisabled = !isCurrentMonth || isPast || disabled;
           const dow = getDay(day);
           const isSunday = dow === 0;
           const isSaturday = dow === 6;
@@ -88,7 +95,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
 
           // 日付テキスト色（選択中・無効以外）
           const dayColor =
-            disabled
+            dayDisabled
               ? isSunday || isHoliday
                 ? "text-red-300"
                 : isSaturday
@@ -106,12 +113,12 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
             <button
               key={day.toISOString()}
               type="button"
-              disabled={disabled}
+              disabled={dayDisabled}
               onClick={() => onSelect(day)}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm
                 transition-colors
-                ${disabled ? "cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
+                ${dayDisabled ? "cursor-not-allowed" : "hover:bg-amber-50 cursor-pointer"}
                 ${isSelected ? "bg-amber-600 text-white hover:bg-amber-700" : ""}
                 ${isToday && !isSelected ? "ring-1 ring-amber-400" : ""}
                 ${dayColor}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { format, addDays, subDays, isBefore, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
@@ -68,6 +68,39 @@ export function ReservationFlow({ options, user }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 月キャッシュ: { "2026-04-10": AvailabilityResponse, ... }
+  const [monthCache, setMonthCache] = useState<
+    Record<string, AvailabilityResponse>
+  >({});
+  const fetchedMonthsRef = useRef<Set<string>>(new Set());
+  const [monthLoading, setMonthLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  const fetchMonth = useCallback(async (month: Date) => {
+    const monthStr = format(month, "yyyy-MM");
+    if (fetchedMonthsRef.current.has(monthStr)) return;
+    fetchedMonthsRef.current.add(monthStr);
+
+    setMonthLoading(true);
+    try {
+      const res = await fetch(`/api/availability/month?month=${monthStr}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: Record<string, AvailabilityResponse> = await res.json();
+      setMonthCache((prev) => ({ ...prev, ...data }));
+    } catch {
+      // 失敗時はリトライ可能にする
+      fetchedMonthsRef.current.delete(monthStr);
+    } finally {
+      setMonthLoading(false);
+      setInitialLoadDone(true);
+    }
+  }, []);
+
+  // マウント時に当月を先読み
+  useEffect(() => {
+    fetchMonth(new Date());
+  }, [fetchMonth]);
+
   // ログイン後に予約状態を復元
   useEffect(() => {
     const saved = loadAndClearState();
@@ -82,6 +115,23 @@ export function ReservationFlow({ options, user }: Props) {
     }
   }, []);
 
+  /** キャッシュからスロットを適用。ヒットしたら true を返す。 */
+  const applyFromCache = useCallback(
+    (date: Date): boolean => {
+      const dateStr = format(date, "yyyy-MM-dd");
+      const cached = monthCache[dateStr];
+      if (!cached) return false;
+      setPricingType(cached.pricingType);
+      setDailyPrice(cached.dailyPrice);
+      setSlots(cached.slots);
+      setSelectedSlots([]);
+      setLoading(false);
+      return true;
+    },
+    [monthCache],
+  );
+
+  /** キャッシュミス時のフォールバック: 単日 API を呼ぶ */
   const fetchSlots = useCallback(async (date: Date) => {
     setLoading(true);
     try {
@@ -101,10 +151,21 @@ export function ReservationFlow({ options, user }: Props) {
     (date: Date) => {
       setSelectedDate(date);
       setSelectedSlots([]);
-      fetchSlots(date);
-      setStep("time");
+      if (applyFromCache(date)) {
+        setStep("time");
+      } else {
+        fetchSlots(date);
+        setStep("time");
+      }
     },
-    [fetchSlots]
+    [applyFromCache, fetchSlots],
+  );
+
+  const handleMonthChange = useCallback(
+    (month: Date) => {
+      fetchMonth(month);
+    },
+    [fetchMonth],
   );
 
   const today = startOfDay(new Date());
@@ -114,15 +175,24 @@ export function ReservationFlow({ options, user }: Props) {
     const prev = subDays(selectedDate, 1);
     if (isBefore(prev, today)) return;
     setSelectedDate(prev);
-    fetchSlots(prev);
-  }, [selectedDate, today, fetchSlots]);
+    if (!applyFromCache(prev)) {
+      fetchSlots(prev);
+      // 月境界を越えた場合、新しい月も先読み
+      const prevMonth = format(prev, "yyyy-MM");
+      if (!fetchedMonthsRef.current.has(prevMonth)) fetchMonth(prev);
+    }
+  }, [selectedDate, today, applyFromCache, fetchSlots, fetchMonth]);
 
   const handleNextDay = useCallback(() => {
     if (!selectedDate) return;
     const next = addDays(selectedDate, 1);
     setSelectedDate(next);
-    fetchSlots(next);
-  }, [selectedDate, fetchSlots]);
+    if (!applyFromCache(next)) {
+      fetchSlots(next);
+      const nextMonth = format(next, "yyyy-MM");
+      if (!fetchedMonthsRef.current.has(nextMonth)) fetchMonth(next);
+    }
+  }, [selectedDate, applyFromCache, fetchSlots, fetchMonth]);
 
   const handleSlotSelect = useCallback((selected: TimeSlot[]) => {
     setSelectedSlots(selected);
@@ -209,12 +279,39 @@ export function ReservationFlow({ options, user }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 mb-4">
           日付を選択
         </h2>
-        <div className="flex justify-center">
-          <DatePicker
-            selectedDate={selectedDate}
-            onSelect={handleDateSelect}
-          />
-        </div>
+        {!initialLoadDone ? (
+          <div className="flex justify-center">
+            <div className="w-full max-w-sm animate-pulse">
+              {/* ヘッダー（前月・月名・次月） */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-9 w-16 rounded-lg bg-zinc-200" />
+                <div className="h-6 w-28 rounded bg-zinc-200" />
+                <div className="h-9 w-16 rounded-lg bg-zinc-200" />
+              </div>
+              {/* 曜日ヘッダー */}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="h-4 rounded bg-zinc-200 mx-auto w-6" />
+                ))}
+              </div>
+              {/* 日付グリッド */}
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-lg bg-zinc-100" />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <DatePicker
+              selectedDate={selectedDate}
+              onSelect={handleDateSelect}
+              onMonthChange={handleMonthChange}
+              disabled={monthLoading}
+            />
+          </div>
+        )}
       </section>
 
       {/* Step 2: 時間枠選択 */}
