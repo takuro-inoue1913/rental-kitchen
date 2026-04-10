@@ -20,6 +20,7 @@ export function HeaderClient({ user }: Props) {
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setMyPageLoading(false);
+    setMenuOpen(false);
   }
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +90,6 @@ export function HeaderClient({ user }: Props) {
                   <Link
                     href="/my/reservations"
                     onClick={() => {
-                      setMenuOpen(false);
                       setMyPageLoading(true);
                     }}
                     className="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
