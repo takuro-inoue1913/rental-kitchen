@@ -61,12 +61,12 @@ export async function POST(
 
   // 6. ステータス更新を先に行い、二重キャンセルを防止
   //    confirmed → cancelled の更新が成功したリクエストのみ返金を実行する
+  //    refund_amount は返金成功後に更新するため、この時点では設定しない
   const { data: updated, error: updateError } = await supabase
     .from("reservations")
     .update({
       status: "cancelled",
       cancelled_at: new Date().toISOString(),
-      refund_amount: policy.refundAmount,
     })
     .eq("id", id)
     .eq("status", "confirmed")
@@ -81,22 +81,22 @@ export async function POST(
   }
 
   // 7. Stripe 返金（返金額 > 0 かつ payment_intent_id が存在する場合）
+  let refundWarning: string | null = null;
   if (policy.refundAmount > 0 && reservation.stripe_payment_intent_id) {
     try {
       await stripe.refunds.create({
         payment_intent: reservation.stripe_payment_intent_id,
         amount: policy.refundAmount,
       });
+      // 返金成功後に refund_amount を記録
+      await supabase
+        .from("reservations")
+        .update({ refund_amount: policy.refundAmount })
+        .eq("id", id);
     } catch (err) {
       console.error("Stripe refund failed:", err);
-      // DB は cancelled 済みだが返金失敗 → 手動対応が必要
-      return Response.json(
-        {
-          error:
-            "キャンセルは完了しましたが返金処理に失敗しました。お手数ですがお問い合わせください。",
-        },
-        { status: 500 },
-      );
+      refundWarning =
+        "キャンセルは完了しましたが返金処理に失敗しました。お手数ですがお問い合わせください。";
     }
   }
 
@@ -105,5 +105,6 @@ export async function POST(
     refundPercent: policy.refundPercent,
     refundAmount: policy.refundAmount,
     cancellationFee: policy.cancellationFee,
+    ...(refundWarning ? { warning: refundWarning } : {}),
   });
 }

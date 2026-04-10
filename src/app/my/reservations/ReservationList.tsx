@@ -52,12 +52,16 @@ export function ReservationList({ reservations }: Props) {
         `/api/reservations/${cancelTarget.id}/cancel`,
         { method: "POST" },
       );
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         setErrorMessage(data?.error ?? "キャンセルに失敗しました");
         return;
       }
       updateReservationStatus(cancelTarget.id, "cancelled");
+      if (data?.warning) {
+        setErrorMessage(data.warning);
+        return;
+      }
       setCancelTarget(null);
     } catch {
       setErrorMessage("通信エラーが発生しました");
