@@ -8,6 +8,7 @@ type Props = {
   defaultPhone: string;
   email: string;
   hasPassword: boolean;
+  onProfileSaved?: (updated: { fullName: string; phone: string }) => void;
 };
 
 export function ProfileForm({
@@ -15,6 +16,7 @@ export function ProfileForm({
   defaultPhone,
   email,
   hasPassword,
+  onProfileSaved,
 }: Props) {
   const [fullName, setFullName] = useState(defaultFullName);
   const [phone, setPhone] = useState(defaultPhone);
@@ -50,6 +52,7 @@ export function ProfileForm({
         return;
       }
 
+      onProfileSaved?.({ fullName, phone });
       setProfileMessage({ type: "success", text: "プロフィールを更新しました" });
     } catch {
       setProfileMessage({ type: "error", text: "通信エラーが発生しました" });
