@@ -129,12 +129,6 @@ export function ReservationList({ reservations }: Props) {
         })}
       </div>
 
-      {errorMessage && (
-        <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          {errorMessage}
-        </div>
-      )}
-
       {cancelTarget && policy && (
         <CancelDialog
           open={!!cancelTarget}
@@ -142,12 +136,11 @@ export function ReservationList({ reservations }: Props) {
           totalPrice={cancelTarget.total_price}
           policy={policy}
           loading={cancelLoading}
+          errorMessage={errorMessage}
           onConfirm={handleCancel}
           onClose={() => {
-            if (!cancelLoading) {
-              setCancelTarget(null);
-              setErrorMessage(null);
-            }
+            setCancelTarget(null);
+            setErrorMessage(null);
           }}
         />
       )}

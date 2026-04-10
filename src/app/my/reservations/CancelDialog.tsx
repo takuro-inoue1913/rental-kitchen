@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { LoadingButton } from "@/app/_components/LoadingButton";
 import type { CancellationPolicy } from "@/lib/cancellation";
 
@@ -10,6 +10,7 @@ type Props = {
   totalPrice: number;
   policy: CancellationPolicy;
   loading: boolean;
+  errorMessage: string | null;
   onConfirm: () => void;
   onClose: () => void;
 };
@@ -26,25 +27,35 @@ export function CancelDialog({
   totalPrice,
   policy,
   loading,
+  errorMessage,
   onConfirm,
   onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const closingRef = useRef(false);
+
+  // 閉じる操作を1箇所に集約し、onClose の二重発火を防止
+  const handleClose = useCallback(() => {
+    if (loading || closingRef.current) return;
+    closingRef.current = true;
+    const el = dialogRef.current;
+    if (el?.open) el.close();
+    onClose();
+    closingRef.current = false;
+  }, [loading, onClose]);
 
   useEffect(() => {
     const el = dialogRef.current;
     if (!el) return;
     if (open && !el.open) {
       el.showModal();
-    } else if (!open && el.open) {
-      el.close();
     }
   }, [open]);
 
   return (
     <dialog
       ref={dialogRef}
-      onClose={onClose}
+      onClose={handleClose}
       className="rounded-xl border border-zinc-200 bg-white p-0 shadow-lg backdrop:bg-black/40 max-w-md w-full"
     >
       <div className="p-6">
@@ -95,10 +106,16 @@ export function CancelDialog({
           </p>
         )}
 
+        {errorMessage && (
+          <p className="mt-4 text-xs text-red-700 bg-red-50 rounded-lg p-3">
+            {errorMessage}
+          </p>
+        )}
+
         <div className="mt-6 flex gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 cursor-pointer"
           >
