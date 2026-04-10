@@ -12,12 +12,6 @@ const TABS = [
 export function AdminNav() {
   const pathname = usePathname();
   const [loadingHref, setLoadingHref] = useState<string | null>(null);
-  const [prevPathname, setPrevPathname] = useState(pathname);
-
-  if (prevPathname !== pathname) {
-    setPrevPathname(pathname);
-    setLoadingHref(null);
-  }
 
   const handleClick = useCallback(
     (href: string) => {
@@ -37,22 +31,24 @@ export function AdminNav() {
         const isActive = tab.exact
           ? pathname === tab.href
           : pathname.startsWith(tab.href);
-        const isLoading = loadingHref === tab.href;
+        const isLoading = loadingHref === tab.href && !isActive;
 
         return (
           <Link
             key={tab.href}
             href={tab.href}
             onClick={() => handleClick(tab.href)}
+            aria-label={tab.label}
             className={`relative flex-1 rounded-md px-4 py-2 text-center text-sm font-medium transition-colors ${
               isActive
                 ? "bg-white text-zinc-900 shadow-sm"
                 : "text-zinc-500 hover:text-zinc-700"
             }`}
           >
-            {isLoading ? (
+            {isLoading && (
               <svg
-                className="inline animate-spin h-4 w-4 text-zinc-400"
+                className="absolute inset-0 m-auto animate-spin h-4 w-4 text-zinc-400"
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -71,9 +67,10 @@ export function AdminNav() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
               </svg>
-            ) : (
-              tab.label
             )}
+            <span className={isLoading ? "opacity-0" : ""}>
+              {tab.label}
+            </span>
           </Link>
         );
       })}
