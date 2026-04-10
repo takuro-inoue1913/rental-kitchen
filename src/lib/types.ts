@@ -9,3 +9,10 @@ export type ReservationStatus =
 export type ReservationSource = "web" | "google_calendar" | "manual";
 
 export type PricingType = "daily" | "hourly";
+
+export type CalendarEvent = {
+  summary: string;
+  startTime: string;
+  endTime: string;
+  isAllDay: boolean;
+};

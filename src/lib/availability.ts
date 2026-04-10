@@ -1,5 +1,5 @@
 import { timeToMinutes, minutesToTime } from "@/lib/time-utils";
-import type { PricingType } from "@/lib/types";
+import type { PricingType, CalendarEvent } from "@/lib/types";
 import type { Database } from "@/lib/database.types";
 
 type AvailabilityRule =
@@ -24,13 +24,6 @@ export type AvailabilityResponse = {
   dailyPrice: number | null;
   slots: TimeSlot[];
   blocks: TimeBlock[];
-};
-
-type CalendarEvent = {
-  summary: string;
-  startTime: string;
-  endTime: string;
-  isAllDay: boolean;
 };
 
 /**

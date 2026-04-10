@@ -1,6 +1,9 @@
 import "server-only";
 import { google } from "googleapis";
 import { extractTime, resolveEndTime } from "./time-utils";
+import type { CalendarEvent } from "./types";
+
+export type { CalendarEvent };
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
@@ -13,13 +16,6 @@ function getAuth() {
 }
 
 const calendar = google.calendar({ version: "v3", auth: getAuth() });
-
-export type CalendarEvent = {
-  summary: string;
-  startTime: string;
-  endTime: string;
-  isAllDay: boolean;
-};
 
 /**
  * 指定日の Google カレンダーイベント（予約）を取得する
