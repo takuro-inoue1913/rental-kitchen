@@ -23,11 +23,19 @@ export async function requireAdmin(): Promise<
     };
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileError) {
+    console.error("Admin auth: profile fetch error:", profileError);
+    return {
+      ok: false,
+      response: Response.json({ error: "認証情報の取得に失敗しました" }, { status: 500 }),
+    };
+  }
 
   if (!profile?.is_admin) {
     return {
