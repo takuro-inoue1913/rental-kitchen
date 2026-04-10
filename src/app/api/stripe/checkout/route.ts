@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
   if (insertError || !reservation) {
     console.error("Reservation insert error:", insertError);
     return Response.json(
-      { error: "予約の作成に失敗しました" },
+      { error: `予約の作成に失敗しました: ${insertError?.message ?? "unknown"}` },
       { status: 500 }
     );
   }
