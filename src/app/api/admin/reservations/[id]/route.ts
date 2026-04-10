@@ -26,10 +26,15 @@ export async function GET(
   }
 
   // オプション情報を取得
-  const { data: options } = await auth.adminClient
+  const { data: options, error: optionsError } = await auth.adminClient
     .from("reservation_options")
     .select("quantity, price_at_booking, option:options(name)")
     .eq("reservation_id", id);
+
+  if (optionsError) {
+    console.error("Admin reservation options fetch error:", optionsError);
+    return Response.json({ error: "オプション情報の取得に失敗しました" }, { status: 500 });
+  }
 
   return Response.json({ reservation, options: options ?? [] });
 }
