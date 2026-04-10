@@ -88,6 +88,42 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+
+    case "charge.refunded": {
+      const charge = event.data.object;
+      const paymentIntentId =
+        typeof charge.payment_intent === "string"
+          ? charge.payment_intent
+          : null;
+      if (!paymentIntentId) break;
+
+      const { data: reservation } = await supabase
+        .from("reservations")
+        .select("id, status")
+        .eq("stripe_payment_intent_id", paymentIntentId)
+        .single();
+
+      if (!reservation || reservation.status !== "confirmed") break;
+
+      const { error } = await supabase
+        .from("reservations")
+        .update({
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          refund_amount: charge.amount_refunded,
+        })
+        .eq("id", reservation.id)
+        .eq("status", "confirmed");
+
+      if (error) {
+        console.error("Webhook: failed to cancel refunded reservation:", error);
+        return Response.json(
+          { error: "DB update failed" },
+          { status: 500 }
+        );
+      }
+      break;
+    }
   }
 
   return Response.json({ received: true });
