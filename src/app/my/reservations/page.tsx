@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MyPageNav } from "../_components/MyPageNav";
 import { ReservationList } from "./ReservationList";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "予約履歴",
@@ -16,9 +12,8 @@ export default async function MyReservationsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/auth/login?redirect=/my/reservations");
-  }
+  // layout.tsx で認証済みのため user は必ず存在するが、型安全のためチェック
+  if (!user) return null;
 
   const { data: reservations } = await supabase
     .from("reservations")
@@ -26,12 +21,5 @@ export default async function MyReservationsPage() {
     .eq("user_id", user.id)
     .order("date", { ascending: false });
 
-  return (
-    <div className="flex flex-col flex-1 bg-white">
-      <div className="mx-auto w-full max-w-2xl px-4 py-10">
-        <MyPageNav />
-        <ReservationList reservations={reservations ?? []} />
-      </div>
-    </div>
-  );
+  return <ReservationList reservations={reservations ?? []} />;
 }
