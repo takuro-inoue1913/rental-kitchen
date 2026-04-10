@@ -167,6 +167,7 @@ export type Database = {
       reservations: {
         Row: {
           base_price: number
+          cancelled_at: string | null
           created_at: string
           date: string
           end_time: string
@@ -175,6 +176,7 @@ export type Database = {
           guest_name: string | null
           id: string
           notes: string | null
+          refund_amount: number | null
           source: string
           start_time: string
           status: string
@@ -186,6 +188,7 @@ export type Database = {
         }
         Insert: {
           base_price: number
+          cancelled_at?: string | null
           created_at?: string
           date: string
           end_time: string
@@ -194,6 +197,7 @@ export type Database = {
           guest_name?: string | null
           id?: string
           notes?: string | null
+          refund_amount?: number | null
           source?: string
           start_time: string
           status?: string
@@ -205,6 +209,7 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          cancelled_at?: string | null
           created_at?: string
           date?: string
           end_time?: string
@@ -213,6 +218,7 @@ export type Database = {
           guest_name?: string | null
           id?: string
           notes?: string | null
+          refund_amount?: number | null
           source?: string
           start_time?: string
           status?: string

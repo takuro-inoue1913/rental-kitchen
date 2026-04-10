@@ -30,6 +30,7 @@ type MyPageContextValue = {
   reservations: Reservation[];
   reservationsLoading: boolean;
   fetchReservations: () => Promise<void>;
+  updateReservationStatus: (id: string, status: string) => void;
   profile: ProfileData | null;
   profileLoading: boolean;
   fetchProfile: () => Promise<void>;
@@ -78,6 +79,15 @@ export function MyPageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const updateReservationStatus = useCallback(
+    (id: string, status: string) => {
+      setReservations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r)),
+      );
+    },
+    [],
+  );
+
   const fetchProfile = useCallback(async () => {
     if (profileFetched.current) return;
     profileFetched.current = true;
@@ -120,6 +130,7 @@ export function MyPageProvider({ children }: { children: React.ReactNode }) {
         reservations,
         reservationsLoading,
         fetchReservations,
+        updateReservationStatus,
         profile,
         profileLoading,
         fetchProfile,
