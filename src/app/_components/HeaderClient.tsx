@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useTransition } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SITE_NAME } from "@/lib/constants";
 import { LoadingLink } from "@/app/_components/LoadingLink";
 import { createClient } from "@/lib/supabase/client";
@@ -13,9 +13,14 @@ type Props = {
 
 export function HeaderClient({ user }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [myPageLoading, setMyPageLoading] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setMyPageLoading(false);
+  }
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -81,17 +86,15 @@ export function HeaderClient({ user }: Props) {
                   <p className="px-4 py-2 text-xs text-zinc-500 truncate border-b border-zinc-100">
                     {user.email}
                   </p>
-                  <button
-                    type="button"
+                  <Link
+                    href="/my/reservations"
                     onClick={() => {
                       setMenuOpen(false);
-                      startTransition(() => {
-                        router.push("/my/reservations");
-                      });
+                      setMyPageLoading(true);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                    className="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                   >
-                    {isPending ? (
+                    {myPageLoading ? (
                       <span className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4 text-zinc-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -102,7 +105,7 @@ export function HeaderClient({ user }: Props) {
                     ) : (
                       "マイページ"
                     )}
-                  </button>
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}
