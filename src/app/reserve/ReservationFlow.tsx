@@ -84,6 +84,7 @@ export function ReservationFlow({ options, user }: Props) {
     setMonthLoading(true);
     try {
       const res = await fetch(`/api/availability/month?month=${monthStr}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: Record<string, AvailabilityResponse> = await res.json();
       setMonthCache((prev) => ({ ...prev, ...data }));
     } catch {
