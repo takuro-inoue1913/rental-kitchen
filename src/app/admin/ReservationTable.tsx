@@ -140,7 +140,7 @@ export function ReservationTable() {
                   className: "bg-zinc-100 text-zinc-500",
                 };
                 return (
-                  <tr key={r.id} className="hover:bg-zinc-50">
+                  <tr key={r.id} className="hover:bg-zinc-50 text-zinc-900">
                     <td className="py-3 whitespace-nowrap">
                       {formatDate(r.date)}
                     </td>
@@ -150,7 +150,7 @@ export function ReservationTable() {
                     <td className="py-3">
                       {r.guest_name || r.guest_email || "—"}
                     </td>
-                    <td className="py-3 whitespace-nowrap">
+                    <td className="py-3 whitespace-nowrap font-medium">
                       ¥{r.total_price.toLocaleString()}
                     </td>
                     <td className="py-3">
