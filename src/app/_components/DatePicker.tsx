@@ -22,10 +22,16 @@ import holidayJp from "@holiday-jp/holiday_jp";
 type Props = {
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
+  onMonthChange?: (month: Date) => void;
 };
 
-export function DatePicker({ selectedDate, onSelect }: Props) {
+export function DatePicker({ selectedDate, onSelect, onMonthChange }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const handleMonthChange = (next: Date) => {
+    setCurrentMonth(next);
+    onMonthChange?.(next);
+  };
   const today = startOfDay(new Date());
 
   const monthStart = startOfMonth(currentMonth);
@@ -42,7 +48,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
-          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(subMonths(currentMonth, 1))}
           className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
           &lt; 前月
@@ -52,7 +58,7 @@ export function DatePicker({ selectedDate, onSelect }: Props) {
         </h3>
         <button
           type="button"
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
           className="px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-zinc-700 font-medium shadow-sm hover:bg-zinc-50 hover:border-zinc-400 active:bg-zinc-100 cursor-pointer transition-colors"
         >
           次月 &gt;
