@@ -50,35 +50,38 @@ export function MyPageProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
 
     async function fetchAll() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const [reservationsResult, profileResult] = await Promise.all([
-        supabase
-          .from("reservations")
-          .select(
-            "id, date, start_time, end_time, status, total_price, created_at",
-          )
-          .eq("user_id", user.id)
-          .order("date", { ascending: false }),
-        supabase
-          .from("profiles")
-          .select("full_name, phone")
-          .eq("id", user.id)
-          .single(),
-      ]);
+        const [reservationsResult, profileResult] = await Promise.all([
+          supabase
+            .from("reservations")
+            .select(
+              "id, date, start_time, end_time, status, total_price, created_at",
+            )
+            .eq("user_id", user.id)
+            .order("date", { ascending: false }),
+          supabase
+            .from("profiles")
+            .select("full_name, phone")
+            .eq("id", user.id)
+            .single(),
+        ]);
 
-      setReservations(reservationsResult.data ?? []);
-      setProfile({
-        fullName: profileResult.data?.full_name ?? "",
-        phone: profileResult.data?.phone ?? "",
-        email: user.email ?? "",
-        hasPassword:
-          user.app_metadata?.providers?.includes("email") ?? false,
-      });
-      setLoading(false);
+        setReservations(reservationsResult.data ?? []);
+        setProfile({
+          fullName: profileResult.data?.full_name ?? "",
+          phone: profileResult.data?.phone ?? "",
+          email: user.email ?? "",
+          hasPassword:
+            user.app_metadata?.providers?.includes("email") ?? false,
+        });
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchAll();
