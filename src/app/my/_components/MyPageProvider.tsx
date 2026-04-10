@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type Reservation = {
   id: string;
@@ -21,7 +28,8 @@ type ProfileData = {
 
 type MyPageContextValue = {
   reservations: Reservation[];
-  profile: ProfileData;
+  profile: ProfileData | null;
+  loading: boolean;
   refreshProfile: (updated: { fullName: string; phone: string }) => void;
 };
 
@@ -33,29 +41,60 @@ export function useMyPage() {
   return ctx;
 }
 
-type Props = {
-  initialReservations: Reservation[];
-  initialProfile: ProfileData;
-  children: React.ReactNode;
-};
+export function MyPageProvider({ children }: { children: React.ReactNode }) {
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export function MyPageProvider({
-  initialReservations,
-  initialProfile,
-  children,
-}: Props) {
-  const [reservations] = useState(initialReservations);
-  const [profile, setProfile] = useState(initialProfile);
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchAll() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [reservationsResult, profileResult] = await Promise.all([
+        supabase
+          .from("reservations")
+          .select(
+            "id, date, start_time, end_time, status, total_price, created_at",
+          )
+          .eq("user_id", user.id)
+          .order("date", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("full_name, phone")
+          .eq("id", user.id)
+          .single(),
+      ]);
+
+      setReservations(reservationsResult.data ?? []);
+      setProfile({
+        fullName: profileResult.data?.full_name ?? "",
+        phone: profileResult.data?.phone ?? "",
+        email: user.email ?? "",
+        hasPassword:
+          user.app_metadata?.providers?.includes("email") ?? false,
+      });
+      setLoading(false);
+    }
+
+    fetchAll();
+  }, []);
 
   const refreshProfile = useCallback(
     (updated: { fullName: string; phone: string }) => {
-      setProfile((prev) => ({ ...prev, ...updated }));
+      setProfile((prev) => (prev ? { ...prev, ...updated } : prev));
     },
     [],
   );
 
   return (
-    <MyPageContext.Provider value={{ reservations, profile, refreshProfile }}>
+    <MyPageContext.Provider
+      value={{ reservations, profile, loading, refreshProfile }}
+    >
       {children}
     </MyPageContext.Provider>
   );

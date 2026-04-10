@@ -4,7 +4,20 @@ import { useMyPage } from "../_components/MyPageProvider";
 import { ProfileForm } from "./ProfileForm";
 
 export function ProfileContent() {
-  const { profile, refreshProfile } = useMyPage();
+  const { profile, loading, refreshProfile } = useMyPage();
+
+  if (loading || !profile) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="rounded-xl border border-zinc-200 p-5 space-y-4">
+          <div className="h-6 w-32 rounded bg-zinc-200" />
+          <div className="h-10 w-full rounded-lg bg-zinc-100" />
+          <div className="h-10 w-full rounded-lg bg-zinc-100" />
+          <div className="h-10 w-full rounded-lg bg-zinc-100" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ProfileForm
