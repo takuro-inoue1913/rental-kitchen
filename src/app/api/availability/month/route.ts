@@ -29,8 +29,16 @@ export async function GET(request: NextRequest) {
   }
 
   const [yearStr, monthStr] = monthParam.split("-");
-  const year = parseInt(yearStr);
-  const month = parseInt(monthStr);
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+
+  if (Number.isNaN(year) || Number.isNaN(month) || month < 1 || month > 12) {
+    return Response.json(
+      { error: "month は 01〜12 の範囲で指定してください" },
+      { status: 400 },
+    );
+  }
+
   const firstDay = `${monthParam}-01`;
   const lastDate = new Date(year, month, 0); // month is 1-indexed → 0-indexed trick
   const lastDay = `${monthParam}-${lastDate.getDate().toString().padStart(2, "0")}`;
