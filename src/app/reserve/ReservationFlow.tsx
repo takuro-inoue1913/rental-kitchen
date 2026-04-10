@@ -125,6 +125,7 @@ export function ReservationFlow({ options, user }: Props) {
       setDailyPrice(cached.dailyPrice);
       setSlots(cached.slots);
       setSelectedSlots([]);
+      setLoading(false);
       return true;
     },
     [monthCache],
