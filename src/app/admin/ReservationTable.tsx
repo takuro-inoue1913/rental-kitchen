@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { TIMEZONE } from "@/lib/constants";
 
@@ -49,24 +49,25 @@ export function ReservationTable() {
   const [dateTo, setDateTo] = useState("");
   const [status, setStatus] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (dateFrom) params.set("date_from", dateFrom);
-    if (dateTo) params.set("date_to", dateTo);
-    if (status) params.set("status", status);
-
-    const res = await fetch(`/api/admin/reservations?${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setReservations(data.reservations ?? []);
-    }
-    setLoading(false);
-  }, [dateFrom, dateTo, status]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (dateFrom) params.set("date_from", dateFrom);
+      if (dateTo) params.set("date_to", dateTo);
+      if (status) params.set("status", status);
+
+      const res = await fetch(`/api/admin/reservations?${params}`);
+      if (!cancelled && res.ok) {
+        const data = await res.json();
+        setReservations(data.reservations ?? []);
+      }
+      if (!cancelled) setLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [dateFrom, dateTo, status]);
 
   return (
     <div>
