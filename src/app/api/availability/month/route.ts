@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       .from("availability_rules")
       .select("*")
       .eq("is_active", true)
+      .order("created_at", { ascending: false })
       .returns<AvailabilityRule[]>(),
     getCalendarEventsForRange(firstDay, lastDay),
   ]);
@@ -65,9 +66,12 @@ export async function GET(request: NextRequest) {
     (blockedResult.data ?? []).map((d) => d.date),
   );
 
+  // 同一曜日に複数ルールがある場合、最新（created_at 降順の先頭）を採用
   const rulesByDow = new Map<number, AvailabilityRule>();
   for (const rule of rulesResult.data ?? []) {
-    rulesByDow.set(rule.day_of_week, rule);
+    if (!rulesByDow.has(rule.day_of_week)) {
+      rulesByDow.set(rule.day_of_week, rule);
+    }
   }
 
   // 月の各日についてスロットを生成
