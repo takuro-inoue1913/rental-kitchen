@@ -102,9 +102,10 @@ export async function getCalendarEventsForRange(
               isAllDay: true,
             });
           }
-          const d = new Date(current + "T00:00:00+09:00");
-          d.setDate(d.getDate() + 1);
-          current = d.toISOString().split("T")[0];
+          const [y, mo, da] = current.split("-").map(Number);
+          const d = new Date(Date.UTC(y, mo - 1, da));
+          d.setUTCDate(d.getUTCDate() + 1);
+          current = d.toISOString().slice(0, 10);
         }
       } else {
         // 時間指定イベント: 開始日に割り当て
