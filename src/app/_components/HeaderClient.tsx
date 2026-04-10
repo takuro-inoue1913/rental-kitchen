@@ -89,10 +89,15 @@ export function HeaderClient({ user }: Props) {
                   </p>
                   <Link
                     href="/my/reservations"
-                    onClick={() => {
+                    onClick={(e) => {
+                      if (myPageLoading) {
+                        e.preventDefault();
+                        return;
+                      }
                       setMyPageLoading(true);
                     }}
-                    className="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                    aria-disabled={myPageLoading}
+                    className={`block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50${myPageLoading ? " pointer-events-none opacity-70" : ""}`}
                   >
                     {myPageLoading ? (
                       <span className="flex items-center gap-2">
