@@ -13,9 +13,9 @@ import type { NextRequest } from "next/server";
  */
 export async function POST(
   _request: NextRequest,
-  ctx: RouteContext<"/api/reservations/[id]/cancel">,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await ctx.params;
+  const { id } = await params;
 
   // 1. 認証チェック
   const authClient = await createClient();
