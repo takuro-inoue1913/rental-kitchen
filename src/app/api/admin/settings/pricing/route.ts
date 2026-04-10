@@ -36,6 +36,21 @@ export async function PUT(request: NextRequest) {
     return Response.json({ error: "不正なデータ形式です" }, { status: 400 });
   }
 
+  const validPricingTypes = ["daily", "hourly"];
+  for (const rule of rules) {
+    if (
+      !rule.id ||
+      typeof rule.price_per_slot !== "number" ||
+      rule.price_per_slot < 0 ||
+      !validPricingTypes.includes(rule.pricing_type)
+    ) {
+      return Response.json(
+        { error: "不正な値が含まれています（料金は0以上、タイプは daily/hourly）" },
+        { status: 400 },
+      );
+    }
+  }
+
   for (const rule of rules) {
     const { error } = await auth.adminClient
       .from("availability_rules")
