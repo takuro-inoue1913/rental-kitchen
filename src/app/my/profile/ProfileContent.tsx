@@ -1,12 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import { useMyPage } from "../_components/MyPageProvider";
 import { ProfileForm } from "./ProfileForm";
 
 export function ProfileContent() {
-  const { profile, loading, refreshProfile } = useMyPage();
+  const { profile, profileLoading, fetchProfile, refreshProfile } = useMyPage();
 
-  if (loading || !profile) {
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  if (profileLoading || !profile) {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="rounded-xl border border-zinc-200 p-5 space-y-4">
