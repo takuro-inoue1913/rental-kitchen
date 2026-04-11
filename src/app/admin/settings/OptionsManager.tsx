@@ -30,6 +30,7 @@ export function OptionsManager() {
     description: "",
     price: "",
   });
+  const [editError, setEditError] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -60,11 +61,13 @@ export function OptionsManager() {
       description: opt.description ?? "",
       price: String(opt.price),
     });
+    setEditError(null);
     setMessage(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
+    setEditError(null);
     setMessage(null);
   }
 
@@ -76,18 +79,16 @@ export function OptionsManager() {
     const price = Number(priceInput);
 
     if (!name) {
-      setMessage({ type: "error", text: "名前は必須です" });
+      setEditError("名前は必須です");
       return;
     }
     if (!Number.isFinite(price) || !Number.isInteger(price) || price < 0) {
-      setMessage({
-        type: "error",
-        text: "料金は0以上の整数で入力してください",
-      });
+      setEditError("料金は0以上の整数で入力してください");
       return;
     }
 
     setSavingId(opt.id);
+    setEditError(null);
     setMessage(null);
     try {
       const res = await fetch("/api/admin/options", {
@@ -110,13 +111,10 @@ export function OptionsManager() {
         setMessage({ type: "success", text: "更新しました" });
       } else {
         const data = await res.json();
-        setMessage({
-          type: "error",
-          text: data.error ?? "更新に失敗しました",
-        });
+        setEditError(data.error ?? "更新に失敗しました");
       }
     } catch {
-      setMessage({ type: "error", text: "通信エラーが発生しました" });
+      setEditError("通信エラーが発生しました");
     } finally {
       setSavingId(null);
     }
@@ -256,6 +254,9 @@ export function OptionsManager() {
                   />
                 </div>
               </div>
+              {editError && (
+                <p className="text-xs text-red-600">{editError}</p>
+              )}
               <div className="flex gap-2">
                 <LoadingButton
                   loading={savingId === opt.id}
