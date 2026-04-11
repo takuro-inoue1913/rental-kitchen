@@ -22,7 +22,7 @@ function formatTime(hour: string, minute: string): string {
 
 /**
  * 開始時間・終了時間をドロップダウン + タイムラインバーで選択するコンポーネント。
- * daily の場合は複数時間帯を追加可能。
+ * daily の場合は複数枠を追加可能。
  */
 export function TimeDropdown({
   slots,
@@ -161,7 +161,7 @@ export function TimeDropdown({
   if (availableSlots.length === 0) {
     return (
       <p className="text-sm text-red-500 text-center">
-        この日は全時間帯が予約済みです
+        この日は全枠が予約済みです
       </p>
     );
   }
@@ -191,7 +191,7 @@ export function TimeDropdown({
           </div>
         ))}
 
-      {/* 時間帯ドロップダウン */}
+      {/* 枠ドロップダウン */}
       <div className="flex items-end justify-center gap-1 flex-wrap">
         {/* 開始時間 */}
         <div>
@@ -323,14 +323,14 @@ export function TimeDropdown({
         </div>
       )}
 
-      {/* 日単位: 時間帯を追加ボタン */}
+      {/* 日単位: 枠を追加ボタン */}
       {pricingType === "daily" && selectedSlots.length > 0 && startOptions.length > 0 && (
         <button
           type="button"
           onClick={handleAddRange}
           className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
         >
-          + 時間帯を追加
+          + 枠を追加
         </button>
       )}
     </div>
