@@ -5,7 +5,7 @@ import { format, addDays, subDays, isBefore, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { countRanges, areSlotsContiguous } from "@/lib/checkout-validation";
 import { DatePicker } from "@/app/_components/DatePicker";
-import { TimeRangeSlider } from "@/app/_components/TimeRangeSlider";
+import { TimeDropdown } from "@/app/_components/TimeDropdown";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
 import { LoadingButton } from "@/app/_components/LoadingButton";
@@ -353,30 +353,19 @@ export function ReservationFlow({ options, user }: Props) {
               <div className="h-3 w-10 rounded bg-zinc-200" />
             </div>
           </div>
-        ) : pricingType === "daily" ? (
-          /* 平日: スライダーバーでブロック選択 */
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-              利用時間を選択
-            </h2>
-            <p className="text-sm text-zinc-600 mb-4">
-              {selectedRangeCount > 0
-                ? `${selectedRangeCount}枠 × ¥${(dailyPrice ?? 0).toLocaleString()} = ¥${basePrice.toLocaleString()} 税込`
-                : `1枠 ¥${(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし`}
-            </p>
-            <TimeRangeSlider
-              slots={slots}
-              selectedSlots={selectedSlots}
-              onSelect={handleSlotSelect}
-            />
-          </div>
         ) : (
-          /* 土日祝: 時間帯選択 */
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 mb-4">
               利用時間を選択
             </h2>
-            <TimeRangeSlider
+            {pricingType === "daily" && (
+              <p className="text-sm text-zinc-600 mb-4">
+                {selectedRangeCount > 0
+                  ? `${selectedRangeCount}枠 × ¥${(dailyPrice ?? 0).toLocaleString()} = ¥${basePrice.toLocaleString()} 税込`
+                  : `1枠 ¥${(dailyPrice ?? 0).toLocaleString()} 税込・人数制限なし`}
+              </p>
+            )}
+            <TimeDropdown
               slots={slots}
               selectedSlots={selectedSlots}
               onSelect={handleSlotSelect}
