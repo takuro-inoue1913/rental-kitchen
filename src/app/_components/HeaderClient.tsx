@@ -66,7 +66,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
           {!pathname.startsWith("/reserve") && (
             <LoadingLink
               href="/reserve"
-              className="h-9 rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
+              className="h-9 rounded-full bg-amber-600 px-3 sm:px-5 text-xs sm:text-sm text-white font-medium transition-colors hover:bg-amber-700"
             >
               予約する
             </LoadingLink>
@@ -133,7 +133,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
           ) : (
             <LoadingLink
               href="/auth/login"
-              className="h-9 rounded-full border border-zinc-300 px-4 text-sm text-zinc-700 font-medium transition-colors hover:bg-zinc-50"
+              className="h-9 rounded-full border border-zinc-300 px-3 sm:px-4 text-xs sm:text-sm text-zinc-700 font-medium transition-colors hover:bg-zinc-50"
             >
               ログイン
             </LoadingLink>
