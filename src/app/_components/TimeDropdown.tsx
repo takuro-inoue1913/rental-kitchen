@@ -150,6 +150,10 @@ export function TimeDropdown({
     slots.length > 0 ? slots[slots.length - 1].endTime : "24:00";
   const selectedSet = new Set(selectedSlots.map((s) => s.startTime));
 
+  // 枠追加ボタンの disabled 判定: 全選択済みスロットを含めて空きがあるか
+  const hasRemainingSlots =
+    availableSlots.filter((s) => !selectedSet.has(s.startTime)).length > 0;
+
   if (slots.length === 0) {
     return (
       <p className="text-zinc-500 text-sm">
@@ -295,7 +299,7 @@ export function TimeDropdown({
         <button
           type="button"
           onClick={handleAddRange}
-          disabled={startOptions.length === 0}
+          disabled={!hasRemainingSlots}
           className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + 枠を追加
