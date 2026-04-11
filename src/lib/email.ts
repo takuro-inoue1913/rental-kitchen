@@ -2,7 +2,9 @@ import "server-only";
 import { Resend } from "resend";
 import { SITE_NAME } from "@/lib/constants";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const EMAIL_FROM =
   process.env.EMAIL_FROM ?? `${SITE_NAME} <noreply@example.com>`;
@@ -86,7 +88,7 @@ export async function sendReservationConfirmation(
   ].join("\n");
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from: EMAIL_FROM,
       to,
       subject: `【予約確定】${formattedDate} ${startTime}〜${endTime} - ${SITE_NAME}`,
