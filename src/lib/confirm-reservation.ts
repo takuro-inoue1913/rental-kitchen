@@ -10,6 +10,8 @@ type ConfirmResult =
 /**
  * 予約を confirmed に更新し、Google カレンダー作成 + 確認メール送信を行う。
  * Stripe Webhook とテスト用 API の両方から呼べる共通ロジック。
+ *
+ * メール送信は Webhook の応答を遅らせないよう fire-and-forget で実行する。
  */
 export async function confirmReservation(
   reservationId: string,
@@ -20,7 +22,7 @@ export async function confirmReservation(
 ): Promise<ConfirmResult> {
   const supabase = createAdminClient();
 
-  // 1. ステータス更新
+  // 1. ステータス更新（total_price も取得してメール用に使う）
   const { data: updated, error } = await supabase
     .from("reservations")
     .update({
@@ -35,7 +37,7 @@ export async function confirmReservation(
     .eq("id", reservationId)
     .eq("status", "pending")
     .select(
-      "id, date, start_time, end_time, guest_name, guest_email, google_event_id",
+      "id, date, start_time, end_time, guest_name, guest_email, google_event_id, total_price",
     )
     .maybeSingle();
 
@@ -49,22 +51,38 @@ export async function confirmReservation(
     return { ok: true, reservationId, alreadyConfirmed: true };
   }
 
-  // 2. オプション情報を取得（カレンダー・メール共通）
-  const { data: resOptions } = await supabase
-    .from("reservation_options")
-    .select("quantity, price_at_booking, option:options(name)")
-    .eq("reservation_id", updated.id);
+  const needsCalendar = !updated.google_event_id;
+  const needsEmail = !!updated.guest_email;
 
-  const optionList = (resOptions ?? []).map((o) => ({
-    name: (o.option as { name: string } | null)?.name ?? "オプション",
-    quantity: o.quantity,
-    price: o.price_at_booking,
-  }));
+  // 2. オプション情報を取得（カレンダーまたはメールが必要な場合のみ）
+  let optionList: { name: string; quantity: number; price: number }[] = [];
+  if (needsCalendar || needsEmail) {
+    const { data: resOptions, error: optionsError } = await supabase
+      .from("reservation_options")
+      .select("quantity, price_at_booking, option:options(name)")
+      .eq("reservation_id", updated.id);
+
+    if (optionsError) {
+      console.error("confirmReservation: options fetch failed:", {
+        reservationId: updated.id,
+        error: optionsError,
+      });
+    } else {
+      optionList = (resOptions ?? []).map((o) => ({
+        name: (o.option as { name: string } | null)?.name ?? "オプション",
+        quantity: o.quantity,
+        price: o.price_at_booking,
+      }));
+    }
+  }
 
   // 3. Google カレンダーにイベント作成（未作成の場合のみ）
-  if (!updated.google_event_id) {
+  if (needsCalendar) {
     const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "https://localhost:3000");
     const optionLines = optionList.map(
       (o) => `  - ${o.name} ×${o.quantity}（¥${o.price.toLocaleString()}）`,
     );
@@ -93,37 +111,42 @@ export async function confirmReservation(
         .update({ google_event_id: eventId })
         .eq("id", updated.id);
     } else {
-      console.error("confirmReservation: Google Calendar event creation failed", {
-        reservationId: updated.id,
-      });
+      console.error(
+        "confirmReservation: Google Calendar event creation failed",
+        { reservationId: updated.id },
+      );
     }
   }
 
-  // 4. 確認メール送信
-  if (updated.guest_email) {
-    const { data: fullRes } = await supabase
-      .from("reservations")
-      .select("total_price")
-      .eq("id", updated.id)
-      .single();
+  // 4. 確認メール送信（fire-and-forget: Webhook 応答を遅らせない）
+  if (needsEmail) {
+    void (async () => {
+      try {
+        const sent = await sendReservationConfirmation({
+          to: updated.guest_email!,
+          guestName: updated.guest_name ?? "ゲスト",
+          date: updated.date,
+          startTime: updated.start_time.slice(0, 5),
+          endTime: updated.end_time.slice(0, 5),
+          totalPrice: updated.total_price,
+          options: optionList,
+          reservationId: updated.id,
+        });
 
-    const sent = await sendReservationConfirmation({
-      to: updated.guest_email,
-      guestName: updated.guest_name ?? "ゲスト",
-      date: updated.date,
-      startTime: updated.start_time.slice(0, 5),
-      endTime: updated.end_time.slice(0, 5),
-      totalPrice: fullRes?.total_price ?? 0,
-      options: optionList,
-      reservationId: updated.id,
-    });
-
-    if (!sent) {
-      console.error("confirmReservation: email failed", {
-        reservationId: updated.id,
-        to: updated.guest_email,
-      });
-    }
+        if (!sent) {
+          console.error("confirmReservation: email failed", {
+            reservationId: updated.id,
+            to: updated.guest_email,
+          });
+        }
+      } catch (err) {
+        console.error("confirmReservation: email error", {
+          reservationId: updated.id,
+          to: updated.guest_email,
+          error: err,
+        });
+      }
+    })();
   }
 
   return { ok: true, reservationId: updated.id, alreadyConfirmed: false };
