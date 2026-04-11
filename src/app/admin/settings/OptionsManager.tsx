@@ -69,48 +69,57 @@ export function OptionsManager() {
   }
 
   async function handleSaveEdit(opt: Option) {
+    // editState をスナップショットして、保存中の書き換えを防止
     const name = editState.name.trim();
-    const price = parseInt(editState.price);
+    const description = editState.description.trim() || null;
+    const priceInput = editState.price.trim();
+    const price = Number(priceInput);
+
     if (!name) {
       setMessage({ type: "error", text: "名前は必須です" });
       return;
     }
-    if (isNaN(price) || price < 0) {
-      setMessage({ type: "error", text: "料金は0以上の数値で入力してください" });
+    if (!Number.isFinite(price) || !Number.isInteger(price) || price < 0) {
+      setMessage({
+        type: "error",
+        text: "料金は0以上の整数で入力してください",
+      });
       return;
     }
 
     setSavingId(opt.id);
     setMessage(null);
-    const res = await fetch("/api/admin/options", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: opt.id,
-        name,
-        description: editState.description.trim() || null,
-        price,
-      }),
-    });
-    if (res.ok) {
-      setOptions((prev) =>
-        prev.map((o) =>
-          o.id === opt.id
-            ? {
-                ...o,
-                name,
-                description: editState.description.trim() || null,
-                price,
-              }
-            : o,
-        ),
-      );
-      setEditingId(null);
-      setMessage({ type: "success", text: "更新しました" });
-    } else {
-      setMessage({ type: "error", text: "更新に失敗しました" });
+    try {
+      const res = await fetch("/api/admin/options", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: opt.id,
+          name,
+          description,
+          price,
+        }),
+      });
+      if (res.ok) {
+        setOptions((prev) =>
+          prev.map((o) =>
+            o.id === opt.id ? { ...o, name, description, price } : o,
+          ),
+        );
+        setEditingId((current) => (current === opt.id ? null : current));
+        setMessage({ type: "success", text: "更新しました" });
+      } else {
+        const data = await res.json();
+        setMessage({
+          type: "error",
+          text: data.error ?? "更新に失敗しました",
+        });
+      }
+    } catch {
+      setMessage({ type: "error", text: "通信エラーが発生しました" });
+    } finally {
+      setSavingId(null);
     }
-    setSavingId(null);
   }
 
   async function handleDelete(opt: Option) {
@@ -238,6 +247,7 @@ export function OptionsManager() {
                   <input
                     type="number"
                     min={0}
+                    step={1}
                     value={editState.price}
                     onChange={(e) =>
                       setEditState((s) => ({ ...s, price: e.target.value }))
