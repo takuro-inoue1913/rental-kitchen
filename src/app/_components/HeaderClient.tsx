@@ -53,16 +53,16 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-4">
         <Link
           href="/"
           onClick={handleLogoClick}
-          className="text-lg font-bold text-amber-700 truncate"
+          className="min-w-0 text-base sm:text-lg font-bold text-amber-700 truncate"
         >
           {SITE_NAME}
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {!pathname.startsWith("/reserve") && (
             <LoadingLink
               href="/reserve"
