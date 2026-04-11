@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import type { TimeSlot } from "@/app/api/availability/route";
 
 type Props = {
@@ -28,18 +27,16 @@ export function TimeDropdown({ slots, selectedSlots, onSelect }: Props) {
   const startOptions = availableSlots.map((s) => s.startTime);
 
   // 終了時間の選択肢: 選択した開始時間から連続する空き枠の endTime
-  const endOptions = useMemo(() => {
-    if (!currentStart) return [];
+  const endOptions: string[] = [];
+  if (currentStart) {
     const startIdx = slots.findIndex((s) => s.startTime === currentStart);
-    if (startIdx === -1) return [];
-
-    const ends: string[] = [];
-    for (let i = startIdx; i < slots.length; i++) {
-      if (!slots[i].available) break;
-      ends.push(slots[i].endTime);
+    if (startIdx !== -1) {
+      for (let i = startIdx; i < slots.length; i++) {
+        if (!slots[i].available) break;
+        endOptions.push(slots[i].endTime);
+      }
     }
-    return ends;
-  }, [currentStart, slots]);
+  }
 
   function handleStartChange(startTime: string) {
     if (!startTime) {
