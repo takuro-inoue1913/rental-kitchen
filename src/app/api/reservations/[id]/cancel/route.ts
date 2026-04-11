@@ -102,15 +102,25 @@ export async function POST(
   }
 
   // 8. Google カレンダーのイベントを削除
+  let calendarWarning: string | null = null;
   if (reservation.google_event_id) {
-    await deleteCalendarEvent(reservation.google_event_id);
+    const deleted = await deleteCalendarEvent(reservation.google_event_id);
+    if (!deleted) {
+      console.error("Google Calendar event deletion failed:", {
+        reservationId: id,
+        googleEventId: reservation.google_event_id,
+      });
+      calendarWarning =
+        "キャンセルは完了しましたがカレンダーのイベント削除に失敗しました。手動で削除してください。";
+    }
   }
 
+  const warning = refundWarning || calendarWarning;
   return Response.json({
     success: true,
     refundPercent: policy.refundPercent,
     refundAmount: policy.refundAmount,
     cancellationFee: policy.cancellationFee,
-    ...(refundWarning ? { warning: refundWarning } : {}),
+    ...(warning ? { warning } : {}),
   });
 }
