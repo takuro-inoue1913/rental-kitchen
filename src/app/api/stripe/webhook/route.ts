@@ -1,6 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createCalendarEvent } from "@/lib/google-calendar";
+import { sendReservationConfirmation } from "@/lib/email";
 import { NextRequest } from "next/server";
 
 /**
@@ -72,20 +73,25 @@ export async function POST(request: NextRequest) {
       // 0件更新 = 既に confirmed（Webhook 再送）→ 冪等に成功扱い
       if (!updated) break;
 
+      // 選択オプション情報を取得（カレンダー・メール共通で使用）
+      const { data: resOptions } = await supabase
+        .from("reservation_options")
+        .select("quantity, price_at_booking, option:options(name)")
+        .eq("reservation_id", updated.id);
+
+      const optionList = (resOptions ?? []).map((o) => ({
+        name: (o.option as { name: string } | null)?.name ?? "オプション",
+        quantity: o.quantity,
+        price: o.price_at_booking,
+      }));
+
       // Google カレンダーにイベントを作成（未作成の場合のみ）
       if (!updated.google_event_id) {
-        // 選択オプション情報を取得
-        const { data: options } = await supabase
-          .from("reservation_options")
-          .select("quantity, price_at_booking, option:options(name)")
-          .eq("reservation_id", updated.id);
-
-        const optionLines = (options ?? []).map((o) => {
-          const name = (o.option as { name: string } | null)?.name ?? "オプション";
-          return `  - ${name} ×${o.quantity}（¥${o.price_at_booking.toLocaleString()}）`;
-        });
-
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
+        const optionLines = optionList.map(
+          (o) => `  - ${o.name} ×${o.quantity}（¥${o.price.toLocaleString()}）`,
+        );
+
         const eventId = await createCalendarEvent({
           date: updated.date,
           startTime: updated.start_time.slice(0, 5),
@@ -110,9 +116,36 @@ export async function POST(request: NextRequest) {
             .update({ google_event_id: eventId })
             .eq("id", updated.id);
         } else {
-          // カレンダー作成失敗 → ログに記録。次回の cron 同期で手動対応可能
           console.error("Webhook: Google Calendar event creation failed", {
             reservationId: updated.id,
+          });
+        }
+      }
+
+      // 予約確定メール送信
+      if (updated.guest_email) {
+        // 合計金額を取得
+        const { data: fullRes } = await supabase
+          .from("reservations")
+          .select("total_price")
+          .eq("id", updated.id)
+          .single();
+
+        const sent = await sendReservationConfirmation({
+          to: updated.guest_email,
+          guestName: updated.guest_name ?? "ゲスト",
+          date: updated.date,
+          startTime: updated.start_time.slice(0, 5),
+          endTime: updated.end_time.slice(0, 5),
+          totalPrice: fullRes?.total_price ?? 0,
+          options: optionList,
+          reservationId: updated.id,
+        });
+
+        if (!sent) {
+          console.error("Webhook: confirmation email failed", {
+            reservationId: updated.id,
+            to: updated.guest_email,
           });
         }
       }
