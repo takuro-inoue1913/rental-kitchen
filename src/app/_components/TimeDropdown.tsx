@@ -188,7 +188,7 @@ export function TimeDropdown({
               <button
                 type="button"
                 onClick={() => handleRemoveRange(i)}
-                className="text-xs text-red-500 hover:text-red-700 cursor-pointer"
+                className="px-3 py-1 text-xs rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors"
               >
                 削除
               </button>
