@@ -1,5 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createCalendarEvent } from "@/lib/google-calendar";
+import { SITE_NAME } from "@/lib/constants";
 import { NextRequest } from "next/server";
 
 /**
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("reservations")
         .update({
           status: "confirmed",
@@ -56,14 +58,39 @@ export async function POST(request: NextRequest) {
               : null,
         })
         .eq("id", reservationId)
-        .eq("status", "pending");
+        .eq("status", "pending")
+        .select("id, date, start_time, end_time, guest_name, guest_email")
+        .single();
 
-      if (error) {
+      if (error || !updated) {
         console.error("Webhook: failed to confirm reservation:", error);
         return Response.json(
           { error: "DB update failed" },
           { status: 500 }
         );
+      }
+
+      // Google カレンダーにイベントを作成
+      const guestLabel = updated.guest_name || updated.guest_email || "ゲスト";
+      const eventId = await createCalendarEvent({
+        date: updated.date,
+        startTime: updated.start_time.slice(0, 5),
+        endTime: updated.end_time.slice(0, 5),
+        summary: `【予約】${guestLabel} - ${SITE_NAME}`,
+        description: [
+          `予約ID: ${updated.id}`,
+          updated.guest_name ? `名前: ${updated.guest_name}` : null,
+          updated.guest_email ? `メール: ${updated.guest_email}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+
+      if (eventId) {
+        await supabase
+          .from("reservations")
+          .update({ google_event_id: eventId })
+          .eq("id", updated.id);
       }
       break;
     }
