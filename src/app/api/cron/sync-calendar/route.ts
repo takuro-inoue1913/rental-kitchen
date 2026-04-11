@@ -7,14 +7,22 @@ import type { NextRequest } from "next/server";
  *
  * Google カレンダー → Supabase の同期。
  * Vercel Cron で定期実行し、カレンダー上のイベントを reservations に取り込む。
- * google_event_id で重複排除。
+ * google_event_id で重複排除（upsert + onConflict）。
  *
  * CRON_SECRET ヘッダーで認証する。
  */
 export async function GET(request: NextRequest) {
-  // Vercel Cron 認証
+  // CRON_SECRET 必須チェック
+  const cronSecret = process.env.CRON_SECRET;
+  if (typeof cronSecret !== "string" || cronSecret.trim() === "") {
+    return Response.json(
+      { error: "CRON_SECRET is not configured" },
+      { status: 500 },
+    );
+  }
+
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,54 +47,58 @@ export async function GET(request: NextRequest) {
 
   // 既に DB に存在する google_event_id を取得
   const eventIds = events.map((e) => e.id);
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("reservations")
     .select("google_event_id")
     .in("google_event_id", eventIds);
+
+  if (existingError) {
+    console.error("Sync existing google_event_id fetch error:", {
+      eventIds,
+      error: existingError,
+    });
+    return Response.json(
+      { error: "Failed to fetch existing reservations" },
+      { status: 500 },
+    );
+  }
 
   const existingIds = new Set(
     (existing ?? []).map((r) => r.google_event_id),
   );
 
-  // 新規イベントのみ insert
-  let synced = 0;
-  let skipped = 0;
-
-  for (const event of events) {
-    if (existingIds.has(event.id)) {
-      skipped++;
-      continue;
-    }
-
-    const startTime = event.isAllDay ? "00:00:00" : `${event.start}:00`;
-    const endTime = event.isAllDay ? "23:59:00" : `${event.end}:00`;
-
-    const { error } = await supabase.from("reservations").insert({
+  // 新規イベントのみ一括 upsert
+  const newRows = events
+    .filter((e) => !existingIds.has(e.id))
+    .map((event) => ({
       date: event.date,
-      start_time: startTime,
-      end_time: endTime,
-      status: "confirmed",
-      source: "google_calendar",
+      start_time: event.isAllDay ? "00:00:00" : `${event.start}:00`,
+      end_time: event.isAllDay ? "23:59:00" : `${event.end}:00`,
+      status: "confirmed" as const,
+      source: "google_calendar" as const,
       google_event_id: event.id,
       base_price: 0,
       total_price: 0,
       notes: event.summary || null,
-    });
+    }));
 
-    if (error) {
-      // UNIQUE 制約違反（google_event_id の重複）はスキップ
-      if (error.code === "23505") {
-        skipped++;
-      } else {
-        console.error("Sync insert error:", {
-          eventId: event.id,
-          error,
-        });
-      }
-    } else {
-      synced++;
-    }
+  const skipped = events.length - newRows.length;
+
+  if (newRows.length === 0) {
+    return Response.json({ synced: 0, skipped });
   }
 
-  return Response.json({ synced, skipped });
+  const { error: upsertError, count } = await supabase
+    .from("reservations")
+    .upsert(newRows, { onConflict: "google_event_id", count: "exact" });
+
+  if (upsertError) {
+    console.error("Sync upsert error:", upsertError);
+    return Response.json(
+      { error: "Failed to sync reservations" },
+      { status: 500 },
+    );
+  }
+
+  return Response.json({ synced: count ?? newRows.length, skipped });
 }
