@@ -6,8 +6,14 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-const EMAIL_FROM =
-  process.env.EMAIL_FROM ?? `${SITE_NAME} <noreply@example.com>`;
+function getSiteUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://localhost:3000")
+  );
+}
 
 type ReservationConfirmationParams = {
   to: string;
@@ -27,6 +33,15 @@ type ReservationConfirmationParams = {
 export async function sendReservationConfirmation(
   params: ReservationConfirmationParams,
 ): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("sendReservationConfirmation: RESEND_API_KEY is not set");
+    return false;
+  }
+  if (!process.env.EMAIL_FROM) {
+    console.error("sendReservationConfirmation: EMAIL_FROM is not set");
+    return false;
+  }
+
   const {
     to,
     guestName,
@@ -38,7 +53,8 @@ export async function sendReservationConfirmation(
     reservationId,
   } = params;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
+  const emailFrom = process.env.EMAIL_FROM;
+  const siteUrl = getSiteUrl();
 
   // 日付フォーマット
   const d = new Date(date + "T00:00:00");
@@ -89,7 +105,7 @@ export async function sendReservationConfirmation(
 
   try {
     const { error } = await getResend().emails.send({
-      from: EMAIL_FROM,
+      from: emailFrom,
       to,
       subject: `【予約確定】${formattedDate} ${startTime}〜${endTime} - ${SITE_NAME}`,
       text,
