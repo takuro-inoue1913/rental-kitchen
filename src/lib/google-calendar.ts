@@ -212,22 +212,52 @@ export async function getCalendarEventsRaw(
 
     return (res.data.items ?? [])
       .filter((e) => !!e.id)
-      .map((event) => {
+      .flatMap((event) => {
         const isAllDay = !event.start?.dateTime;
-        const startDt = event.start?.dateTime ?? event.start?.date ?? "";
-        const endDt = event.end?.dateTime ?? event.end?.date ?? "";
-        const date = isAllDay
-          ? (event.start?.date ?? "")
-          : startDt.split("T")[0];
 
-        return {
-          id: event.id!,
-          summary: event.summary ?? "",
-          start: isAllDay ? "00:00" : extractTime(startDt),
-          end: isAllDay ? "23:59" : resolveEndTime(startDt, endDt),
-          isAllDay,
-          date,
-        };
+        if (!isAllDay) {
+          const startDt = event.start?.dateTime ?? "";
+          const endDt = event.end?.dateTime ?? "";
+          return [
+            {
+              id: event.id!,
+              summary: event.summary ?? "",
+              start: extractTime(startDt),
+              end: resolveEndTime(startDt, endDt),
+              isAllDay: false,
+              date: startDt.split("T")[0],
+            },
+          ];
+        }
+
+        // 終日イベント: start.date 〜 end.date（exclusive）を日ごとに展開
+        const eventStart = event.start?.date ?? "";
+        const eventEnd = event.end?.date ?? eventStart;
+        const expanded: Array<{
+          id: string;
+          summary: string;
+          start: string;
+          end: string;
+          isAllDay: boolean;
+          date: string;
+        }> = [];
+
+        const current = new Date(`${eventStart}T00:00:00Z`);
+        const exclusiveEnd = new Date(`${eventEnd}T00:00:00Z`);
+
+        while (current < exclusiveEnd) {
+          expanded.push({
+            id: event.id!,
+            summary: event.summary ?? "",
+            start: "00:00",
+            end: "23:59",
+            isAllDay: true,
+            date: current.toISOString().slice(0, 10),
+          });
+          current.setUTCDate(current.getUTCDate() + 1);
+        }
+
+        return expanded;
       });
   } catch (error) {
     console.error("Google Calendar API error (raw):", error);
