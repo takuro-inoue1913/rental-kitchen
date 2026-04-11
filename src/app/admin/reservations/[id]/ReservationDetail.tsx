@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { isCancellable, calculateRefund } from "@/lib/cancellation";
+import { AdminCancelDialog } from "./AdminCancelDialog";
 
 type Reservation = {
   id: string;
@@ -53,10 +55,15 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [options, setOptions] = useState<ReservationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -73,6 +80,49 @@ export function ReservationDetail() {
     }
     load();
   }, [id]);
+
+  const cancellable = reservation
+    ? isCancellable(reservation.status, reservation.date)
+    : false;
+
+  const policy = useMemo(
+    () =>
+      reservation
+        ? calculateRefund(reservation.date, reservation.total_price)
+        : null,
+    [reservation?.date, reservation?.total_price],
+  );
+
+  async function handleCancel() {
+    setCancelLoading(true);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/admin/reservations/${id}/cancel`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCancelError(data.error ?? "キャンセルに失敗しました");
+        return;
+      }
+      if (data.warning) {
+        setCancelError(data.warning);
+      }
+      setCancelOpen(false);
+      router.refresh();
+      // 予約データを再取得して画面に反映
+      const detail = await fetch(`/api/admin/reservations/${id}`);
+      if (detail.ok) {
+        const updated = await detail.json();
+        setReservation(updated.reservation);
+        setOptions(updated.options ?? []);
+      }
+    } catch {
+      setCancelError("通信エラーが発生しました");
+    } finally {
+      setCancelLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -116,11 +166,25 @@ export function ReservationDetail() {
           <h2 className="text-lg font-semibold text-zinc-900">
             {formatDate(reservation.date)}
           </h2>
-          <span
-            className={`inline-block rounded-full px-3 py-0.5 text-xs font-medium ${st.className}`}
-          >
-            {st.label}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block rounded-full px-3 py-0.5 text-xs font-medium ${st.className}`}
+            >
+              {st.label}
+            </span>
+            {cancellable && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelError(null);
+                  setCancelOpen(true);
+                }}
+                className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer"
+              >
+                キャンセル
+              </button>
+            )}
+          </div>
         </div>
 
         <Row
@@ -195,6 +259,19 @@ export function ReservationDetail() {
           value={new Date(reservation.created_at).toLocaleString("ja-JP")}
         />
       </div>
+
+      {policy && (
+        <AdminCancelDialog
+          open={cancelOpen}
+          reservationDate={reservation.date}
+          totalPrice={reservation.total_price}
+          policy={policy}
+          loading={cancelLoading}
+          errorMessage={cancelError}
+          onConfirm={handleCancel}
+          onClose={() => setCancelOpen(false)}
+        />
+      )}
     </div>
   );
 }
