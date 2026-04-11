@@ -5,7 +5,7 @@ import type { CalendarEvent } from "./types";
 
 export type { CalendarEvent };
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
 function getAuth() {
   return new google.auth.JWT({
@@ -123,5 +123,144 @@ export async function getCalendarEventsForRange(
   } catch (error) {
     console.error("Google Calendar API error (range):", error);
     return {};
+  }
+}
+
+/**
+ * Google カレンダーにイベントを作成する。
+ * 予約確定時に呼び出し、google_event_id を返す。
+ */
+export async function createCalendarEvent(params: {
+  date: string;
+  startTime: string;
+  endTime: string;
+  summary: string;
+  description?: string;
+}): Promise<string | null> {
+  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  if (!calendarId) return null;
+
+  const { date, startTime, endTime, summary, description } = params;
+
+  try {
+    const res = await calendar.events.insert({
+      calendarId,
+      requestBody: {
+        summary,
+        description: description ?? "",
+        start: { dateTime: `${date}T${startTime}:00+09:00`, timeZone: "Asia/Tokyo" },
+        end: { dateTime: `${date}T${endTime}:00+09:00`, timeZone: "Asia/Tokyo" },
+      },
+    });
+    return res.data.id ?? null;
+  } catch (error) {
+    console.error("Google Calendar create event error:", error);
+    return null;
+  }
+}
+
+/**
+ * Google カレンダーのイベントを削除する。
+ * 予約キャンセル時に呼び出す。
+ */
+export async function deleteCalendarEvent(
+  eventId: string,
+): Promise<boolean> {
+  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  if (!calendarId) return false;
+
+  try {
+    await calendar.events.delete({ calendarId, eventId });
+    return true;
+  } catch (error) {
+    console.error("Google Calendar delete event error:", error);
+    return false;
+  }
+}
+
+/**
+ * 指定期間の Google カレンダーイベントを取得する（同期用）。
+ * google_event_id を含む生データを返す。
+ */
+export async function getCalendarEventsRaw(
+  startDate: string,
+  endDate: string,
+): Promise<
+  Array<{
+    id: string;
+    summary: string;
+    start: string;
+    end: string;
+    isAllDay: boolean;
+    date: string;
+  }>
+> {
+  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  if (!calendarId) return [];
+
+  const timeMin = `${startDate}T00:00:00+09:00`;
+  const timeMax = `${endDate}T23:59:59+09:00`;
+
+  try {
+    const res = await calendar.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return (res.data.items ?? [])
+      .filter((e) => !!e.id)
+      .flatMap((event) => {
+        const isAllDay = !event.start?.dateTime;
+
+        if (!isAllDay) {
+          const startDt = event.start?.dateTime ?? "";
+          const endDt = event.end?.dateTime ?? "";
+          return [
+            {
+              id: event.id!,
+              summary: event.summary ?? "",
+              start: extractTime(startDt),
+              end: resolveEndTime(startDt, endDt),
+              isAllDay: false,
+              date: startDt.split("T")[0],
+            },
+          ];
+        }
+
+        // 終日イベント: start.date 〜 end.date（exclusive）を日ごとに展開
+        const eventStart = event.start?.date ?? "";
+        const eventEnd = event.end?.date ?? eventStart;
+        const expanded: Array<{
+          id: string;
+          summary: string;
+          start: string;
+          end: string;
+          isAllDay: boolean;
+          date: string;
+        }> = [];
+
+        const current = new Date(`${eventStart}T00:00:00Z`);
+        const exclusiveEnd = new Date(`${eventEnd}T00:00:00Z`);
+
+        while (current < exclusiveEnd) {
+          expanded.push({
+            id: event.id!,
+            summary: event.summary ?? "",
+            start: "00:00",
+            end: "23:59",
+            isAllDay: true,
+            date: current.toISOString().slice(0, 10),
+          });
+          current.setUTCDate(current.getUTCDate() + 1);
+        }
+
+        return expanded;
+      });
+  } catch (error) {
+    console.error("Google Calendar API error (raw):", error);
+    return [];
   }
 }

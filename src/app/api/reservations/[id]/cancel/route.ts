@@ -2,6 +2,7 @@ import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRefund, isCancellable } from "@/lib/cancellation";
+import { deleteCalendarEvent } from "@/lib/google-calendar";
 import type { NextRequest } from "next/server";
 
 /**
@@ -31,7 +32,7 @@ export async function POST(
   const { data: reservation, error: fetchError } = await supabase
     .from("reservations")
     .select(
-      "id, user_id, date, status, total_price, stripe_payment_intent_id",
+      "id, user_id, date, status, total_price, stripe_payment_intent_id, google_event_id",
     )
     .eq("id", id)
     .single();
@@ -100,11 +101,26 @@ export async function POST(
     }
   }
 
+  // 8. Google カレンダーのイベントを削除
+  let calendarWarning: string | null = null;
+  if (reservation.google_event_id) {
+    const deleted = await deleteCalendarEvent(reservation.google_event_id);
+    if (!deleted) {
+      console.error("Google Calendar event deletion failed:", {
+        reservationId: id,
+        googleEventId: reservation.google_event_id,
+      });
+      calendarWarning =
+        "キャンセルは完了しましたがカレンダーのイベント削除に失敗しました。手動で削除してください。";
+    }
+  }
+
+  const warning = refundWarning || calendarWarning;
   return Response.json({
     success: true,
     refundPercent: policy.refundPercent,
     refundAmount: policy.refundAmount,
     cancellationFee: policy.cancellationFee,
-    ...(refundWarning ? { warning: refundWarning } : {}),
+    ...(warning ? { warning } : {}),
   });
 }

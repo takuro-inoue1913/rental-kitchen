@@ -64,6 +64,10 @@ vi.mock("@/lib/cancellation", async () => {
   return actual;
 });
 
+vi.mock("@/lib/google-calendar", () => ({
+  deleteCalendarEvent: vi.fn(() => Promise.resolve(true)),
+}));
+
 import { POST } from "../route";
 import { requireAdmin } from "@/lib/admin-auth";
 import { stripe } from "@/lib/stripe";
