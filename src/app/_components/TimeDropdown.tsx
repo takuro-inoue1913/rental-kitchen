@@ -117,6 +117,7 @@ export function TimeDropdown({
   }
 
   function handleAddRange() {
+    if (!hasRemainingSlots) return;
     setAddingNew(true);
   }
 
@@ -217,8 +218,8 @@ export function TimeDropdown({
           </div>
         ))}
 
-      {/* アクティブな枠ドロップダウン */}
-      <div>
+      {/* アクティブな枠ドロップダウン（addingNew で選択肢がない場合は非表示） */}
+      {!(addingNew && startOptions.length === 0) && <div>
         {pricingType === "daily" && confirmedRanges.length > 0 && (
           <span className="block text-xs text-zinc-500 mb-1">
             枠 {confirmedRanges.length + 1}
@@ -292,7 +293,7 @@ export function TimeDropdown({
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* 日単位: 枠を追加ボタン（タイムラインバーの上） */}
       {pricingType === "daily" && selectedSlots.length > 0 && !addingNew && (
