@@ -219,7 +219,7 @@ export function OptionsManager() {
                     onChange={(e) =>
                       setEditState((s) => ({ ...s, name: e.target.value }))
                     }
-                    className={inputClass}
+                    className={`w-full ${inputClass}`}
                   />
                 </div>
                 <div className="flex-1 min-w-[120px]">
@@ -235,7 +235,7 @@ export function OptionsManager() {
                         description: e.target.value,
                       }))
                     }
-                    className={inputClass}
+                    className={`w-full ${inputClass}`}
                   />
                 </div>
                 <div className="w-28">
@@ -250,7 +250,7 @@ export function OptionsManager() {
                     onChange={(e) =>
                       setEditState((s) => ({ ...s, price: e.target.value }))
                     }
-                    className={`${inputClass} text-right`}
+                    className={`w-full ${inputClass} text-right`}
                   />
                 </div>
               </div>
