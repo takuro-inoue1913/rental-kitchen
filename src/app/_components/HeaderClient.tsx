@@ -9,9 +9,10 @@ import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   user: { email: string } | null;
+  isAdmin?: boolean;
 };
 
-export function HeaderClient({ user }: Props) {
+export function HeaderClient({ user, isAdmin = false }: Props) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [myPageLoading, setMyPageLoading] = useState(false);
@@ -87,6 +88,14 @@ export function HeaderClient({ user }: Props) {
                   <p className="px-4 py-2 text-xs text-zinc-500 truncate border-b border-zinc-100">
                     {user.email}
                   </p>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 text-sm text-amber-700 font-medium hover:bg-amber-50"
+                    >
+                      管理画面
+                    </Link>
+                  )}
                   <Link
                     href="/my/reservations"
                     onClick={(e) => {
