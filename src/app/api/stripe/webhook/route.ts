@@ -1,7 +1,6 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createCalendarEvent } from "@/lib/google-calendar";
-import { SITE_NAME } from "@/lib/constants";
 import { NextRequest } from "next/server";
 
 /**
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", reservationId)
         .eq("status", "pending")
-        .select("id, date, start_time, end_time, google_event_id")
+        .select("id, date, start_time, end_time, guest_name, guest_email, google_event_id")
         .maybeSingle();
 
       if (error) {
@@ -75,14 +74,19 @@ export async function POST(request: NextRequest) {
 
       // Google カレンダーにイベントを作成（未作成の場合のみ）
       if (!updated.google_event_id) {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
         const eventId = await createCalendarEvent({
           date: updated.date,
           startTime: updated.start_time.slice(0, 5),
           endTime: updated.end_time.slice(0, 5),
-          summary: `【予約】${SITE_NAME}`,
+          summary: "オーナー利用",
           description: [
             `予約ID: ${updated.id}`,
-            `時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
+            `予約者名: ${updated.guest_name ?? "—"}`,
+            `メール: ${updated.guest_email ?? "—"}`,
+            `予約時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
+            "",
+            `管理画面: ${siteUrl}/admin/reservations/${updated.id}`,
           ].join("\n"),
         });
 
