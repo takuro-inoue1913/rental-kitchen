@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import type { TimeSlot } from "@/app/api/availability/route";
 import type { PricingType } from "@/lib/types";
 
@@ -31,9 +31,10 @@ export function TimeDropdown({
   pricingType,
 }: Props) {
   const [addingNew, setAddingNew] = useState(false);
+  const uid = useId();
   const availableSlots = slots.filter((s) => s.available);
 
-  // 選択中の範囲一覧を算出
+  // 選択中の範囲一覧を算出（非連続スロットも正しくグループ化）
   const ranges = getRanges(selectedSlots);
   const lastRangeIdx = ranges.length - 1;
 
@@ -144,7 +145,13 @@ export function TimeDropdown({
         .map((t) => parseTime(t).minute)
     : [];
 
-  const totalHours = selectedSlots.length;
+  // 実際の時間差分（分）から合計時間を算出
+  const totalMinutes = ranges.reduce((sum, r) => {
+    const [sh, sm] = r.start.split(":").map(Number);
+    const [eh, em] = r.end.split(":").map(Number);
+    return sum + (eh * 60 + em) - (sh * 60 + sm);
+  }, 0);
+  const totalHours = totalMinutes / 60;
 
   // タイムラインバー用
   const lastSlotTime =
@@ -227,9 +234,10 @@ export function TimeDropdown({
         )}
         <div className="flex items-end justify-center gap-1 flex-wrap">
           <div>
-            <label className="block text-xs text-zinc-500 mb-1">開始</label>
+            <label htmlFor={`${uid}-start-h`} className="block text-xs text-zinc-500 mb-1">開始</label>
             <div className="flex items-center gap-0.5">
               <select
+                id={`${uid}-start-h`}
                 value={currentStart ? parseTime(currentStart).hour : ""}
                 onChange={(e) => handleStartHourChange(e.target.value)}
                 className={selectClass}
@@ -243,6 +251,8 @@ export function TimeDropdown({
               </select>
               <span className="text-zinc-500 font-medium">:</span>
               <select
+                id={`${uid}-start-m`}
+                aria-label="開始（分）"
                 value={currentStart ? parseTime(currentStart).minute : ""}
                 onChange={(e) => handleStartMinuteChange(e.target.value)}
                 disabled={!currentStart}
@@ -261,9 +271,10 @@ export function TimeDropdown({
           <span className="text-zinc-400 text-lg pb-2 px-2">〜</span>
 
           <div>
-            <label className="block text-xs text-zinc-500 mb-1">終了</label>
+            <label htmlFor={`${uid}-end-h`} className="block text-xs text-zinc-500 mb-1">終了</label>
             <div className="flex items-center gap-0.5">
               <select
+                id={`${uid}-end-h`}
                 value={currentEnd ? parseTime(currentEnd).hour : ""}
                 onChange={(e) => handleEndHourChange(e.target.value)}
                 disabled={!currentStart}
@@ -278,6 +289,8 @@ export function TimeDropdown({
               </select>
               <span className="text-zinc-500 font-medium">:</span>
               <select
+                id={`${uid}-end-m`}
+                aria-label="終了（分）"
                 value={currentEnd ? parseTime(currentEnd).minute : ""}
                 onChange={(e) => handleEndMinuteChange(e.target.value)}
                 disabled={!currentEnd}
@@ -361,7 +374,7 @@ export function TimeDropdown({
       {totalHours > 0 && (
         <div className="flex justify-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-medium text-white">
-            {totalHours}時間選択中
+            {Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1)}時間選択中
           </span>
         </div>
       )}
