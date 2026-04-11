@@ -1,4 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// --- 固定時刻: 2026-04-10 10:00 JST ---
+const FIXED_NOW = new Date("2026-04-10T01:00:00Z"); // UTC 01:00 = JST 10:00
+
+/** Asia/Tokyo 基準で指定日数後の日付文字列を返す */
+function dateAfterDays(days: number): string {
+  const todayStr = FIXED_NOW.toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  });
+  const d = new Date(todayStr + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 // --- Supabase チェーンモック ---
 function createChainMock(resolveValue: { data: unknown; error: unknown }) {
@@ -30,8 +46,6 @@ function createTwoStepChainMock(
 }
 
 // --- モジュールモック ---
-const mockAdminClient = createChainMock({ data: null, error: null });
-
 vi.mock("@/lib/admin-auth", () => ({
   requireAdmin: vi.fn(),
 }));
@@ -65,17 +79,13 @@ function makeParams(id: string) {
   return { params: Promise.resolve({ id }) };
 }
 
-/** 7 日後の日付文字列を返す */
-function futureDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 7);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(FIXED_NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
@@ -108,7 +118,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
       data: {
         id: "uuid-1",
         user_id: "user-1",
-        date: futureDate(),
+        date: dateAfterDays(7),
         status: "cancelled",
         total_price: 11000,
         stripe_payment_intent_id: "pi_test",
@@ -153,7 +163,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
         data: {
           id: "uuid-1",
           user_id: "user-1",
-          date: futureDate(),
+          date: dateAfterDays(7),
           status: "confirmed",
           total_price: 11000,
           stripe_payment_intent_id: "pi_test",
@@ -174,7 +184,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
   });
 
   it("正常にキャンセル → Stripe 返金 → 200 を返す", async () => {
-    const date = futureDate(); // 7日後 → 100% 返金
+    const date = dateAfterDays(7); // 7日後 → 100% 返金
     const chain = createTwoStepChainMock(
       {
         data: {
@@ -225,7 +235,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
   });
 
   it("Stripe 返金失敗時は warning 付きで 200 を返す", async () => {
-    const date = futureDate();
+    const date = dateAfterDays(7);
     const chain = createTwoStepChainMock(
       {
         data: {
@@ -255,7 +265,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
   });
 
   it("payment_intent_id がない場合は Stripe を呼ばない", async () => {
-    const date = futureDate();
+    const date = dateAfterDays(7);
     const chain = createTwoStepChainMock(
       {
         data: {
@@ -284,9 +294,7 @@ describe("POST /api/admin/reservations/[id]/cancel", () => {
   });
 
   it("当日キャンセル（返金額 0）の場合は Stripe を呼ばない", async () => {
-    // 当日の日付を取得
-    const now = new Date();
-    const todayStr = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+    const todayStr = dateAfterDays(0); // 当日
 
     const chain = createTwoStepChainMock(
       {
