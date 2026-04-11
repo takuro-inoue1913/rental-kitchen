@@ -7,8 +7,9 @@ import type { NextRequest } from "next/server";
  * POST /api/admin/reservations/[id]/cancel
  *
  * 管理者が予約をキャンセルする。
- * キャンセルポリシーに基づき返金額を計算し、Stripe Refund API で返金後、
- * ステータスを cancelled に更新する。
+ * キャンセルポリシーに基づき返金額を計算し、二重キャンセルを防ぐため
+ * 先にステータスを cancelled に更新したうえで、必要に応じて
+ * Stripe Refund API で返金する。
  */
 export async function POST(
   _request: NextRequest,
