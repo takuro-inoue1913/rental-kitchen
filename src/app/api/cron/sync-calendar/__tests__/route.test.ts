@@ -67,7 +67,9 @@ describe("GET /api/cron/sync-calendar", () => {
     chain.from = vi.fn(() => chain);
     chain.select = vi.fn(() => chain);
     chain.in = vi.fn(() => Promise.resolve({ data: [], error: null }));
-    chain.insert = vi.fn(() => Promise.resolve({ error: null }));
+    chain.upsert = vi.fn(() =>
+      Promise.resolve({ error: null, count: 1 }),
+    );
 
     mockedCreateAdminClient.mockReturnValue(chain as never);
 
