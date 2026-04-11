@@ -3,6 +3,14 @@
 import { useState, useId } from "react";
 import type { TimeSlot } from "@/app/api/availability/route";
 import type { PricingType } from "@/lib/types";
+import {
+  parseTime,
+  formatTime,
+  getRanges,
+  getStartOptions,
+  getEndOptions,
+  calcTotalHours,
+} from "@/lib/time-dropdown-logic";
 
 type Props = {
   slots: TimeSlot[];
@@ -10,15 +18,6 @@ type Props = {
   onSelect: (selected: TimeSlot[]) => void;
   pricingType: PricingType;
 };
-
-function parseTime(time: string): { hour: string; minute: string } {
-  const [h, m] = time.split(":");
-  return { hour: h, minute: m ?? "00" };
-}
-
-function formatTime(hour: string, minute: string): string {
-  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
-}
 
 /**
  * 開始時間・終了時間をドロップダウン + タイムラインバーで選択するコンポーネント。
@@ -54,24 +53,8 @@ export function TimeDropdown({
       });
   const occupiedSet = new Set(confirmedSlots.map((s) => s.startTime));
 
-  // 開始時間の選択肢: 空き枠 かつ 確定済み範囲と重複しない
-  const startOptions = availableSlots
-    .filter((s) => !occupiedSet.has(s.startTime))
-    .map((s) => s.startTime);
-
-  // 終了時間の選択肢: 選択した開始時間から連続する空き枠の endTime
-  const endOptions: string[] = [];
-  if (currentStart) {
-    const startIdx = slots.findIndex((s) => s.startTime === currentStart);
-    if (startIdx !== -1) {
-      for (let i = startIdx; i < slots.length; i++) {
-        if (!slots[i].available || occupiedSet.has(slots[i].startTime)) {
-          break;
-        }
-        endOptions.push(slots[i].endTime);
-      }
-    }
-  }
+  const startOptions = getStartOptions(slots, occupiedSet);
+  const endOptions = getEndOptions(slots, currentStart, occupiedSet);
 
   function handleStartChange(startTime: string) {
     if (!startTime) {
@@ -145,13 +128,7 @@ export function TimeDropdown({
         .map((t) => parseTime(t).minute)
     : [];
 
-  // 実際の時間差分（分）から合計時間を算出
-  const totalMinutes = ranges.reduce((sum, r) => {
-    const [sh, sm] = r.start.split(":").map(Number);
-    const [eh, em] = r.end.split(":").map(Number);
-    return sum + (eh * 60 + em) - (sh * 60 + sm);
-  }, 0);
-  const totalHours = totalMinutes / 60;
+  const totalHours = calcTotalHours(ranges);
 
   // タイムラインバー用
   const lastSlotTime =
@@ -382,29 +359,3 @@ export function TimeDropdown({
   );
 }
 
-type Range = { start: string; end: string; hours: number };
-
-function getRanges(selectedSlots: TimeSlot[]): Range[] {
-  if (selectedSlots.length === 0) return [];
-  const sorted = [...selectedSlots].sort((a, b) =>
-    a.startTime.localeCompare(b.startTime),
-  );
-  const ranges: Range[] = [];
-  let start = sorted[0].startTime;
-  let end = sorted[0].endTime;
-  let hours = 1;
-
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].startTime === end) {
-      end = sorted[i].endTime;
-      hours++;
-    } else {
-      ranges.push({ start, end, hours });
-      start = sorted[i].startTime;
-      end = sorted[i].endTime;
-      hours = 1;
-    }
-  }
-  ranges.push({ start, end, hours });
-  return ranges;
-}
