@@ -209,8 +209,8 @@ export function ReservationFlow({ options, user }: Props) {
   const handleCheckout = useCallback(async () => {
     if (!selectedDate || selectedSlots.length === 0 || !user) return;
 
-    // 非連続選択のチェック: 連続した枠のみ許可
-    if (!areSlotsContiguous(selectedSlots)) {
+    // hourly の場合は連続した枠のみ許可（daily は複数時間帯を許容）
+    if (pricingType === "hourly" && !areSlotsContiguous(selectedSlots)) {
       setError("連続していない時間帯が含まれています。連続した時間帯を選択してください。");
       return;
     }
@@ -248,7 +248,7 @@ export function ReservationFlow({ options, user }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedDate, selectedSlots, selectedOptionIds, user]);
+  }, [selectedDate, selectedSlots, selectedOptionIds, user, pricingType]);
 
   // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
   const selectedRangeCount =
@@ -369,6 +369,7 @@ export function ReservationFlow({ options, user }: Props) {
               slots={slots}
               selectedSlots={selectedSlots}
               onSelect={handleSlotSelect}
+              pricingType={pricingType}
             />
           </div>
         )}
