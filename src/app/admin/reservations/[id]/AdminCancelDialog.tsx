@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { LoadingButton } from "@/app/_components/LoadingButton";
 import type { CancellationPolicy } from "@/lib/cancellation";
 
@@ -32,29 +32,29 @@ export function AdminCancelDialog({
   onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const closingRef = useRef(false);
-
-  const handleClose = useCallback(() => {
-    if (loading || closingRef.current) return;
-    closingRef.current = true;
-    const el = dialogRef.current;
-    if (el?.open) el.close();
-    onClose();
-    closingRef.current = false;
-  }, [loading, onClose]);
 
   useEffect(() => {
     const el = dialogRef.current;
     if (!el) return;
     if (open && !el.open) {
       el.showModal();
+    } else if (!open && el.open) {
+      el.close();
     }
   }, [open]);
 
   return (
     <dialog
       ref={dialogRef}
-      onClose={handleClose}
+      // loading 中は ESC / 外クリックによる close を抑止
+      onCancel={(e) => {
+        if (loading) {
+          e.preventDefault();
+          return;
+        }
+      }}
+      // dialog が閉じたら親 state を同期（閉じる経路を一本化）
+      onClose={onClose}
       className="rounded-xl border border-zinc-200 bg-white p-0 shadow-lg backdrop:bg-black/40 max-w-md w-full"
     >
       <div className="p-6">
@@ -114,7 +114,7 @@ export function AdminCancelDialog({
         <div className="mt-6 flex gap-3">
           <button
             type="button"
-            onClick={handleClose}
+            onClick={() => dialogRef.current?.close()}
             disabled={loading}
             className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 cursor-pointer"
           >

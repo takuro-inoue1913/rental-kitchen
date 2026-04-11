@@ -105,12 +105,20 @@ export function ReservationDetail() {
         setCancelError(data.error ?? "キャンセルに失敗しました");
         return;
       }
+      // warning がある場合はダイアログを閉じずに表示し続ける
       if (data.warning) {
         setCancelError(data.warning);
+        router.refresh();
+        const detail = await fetch(`/api/admin/reservations/${id}`);
+        if (detail.ok) {
+          const updated = await detail.json();
+          setReservation(updated.reservation);
+          setOptions(updated.options ?? []);
+        }
+        return;
       }
       setCancelOpen(false);
       router.refresh();
-      // 予約データを再取得して画面に反映
       const detail = await fetch(`/api/admin/reservations/${id}`);
       if (detail.ok) {
         const updated = await detail.json();
