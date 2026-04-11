@@ -64,6 +64,7 @@ export function ReservationDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -92,6 +93,31 @@ export function ReservationDetail() {
         : null,
     [reservation?.date, reservation?.total_price],
   );
+
+  async function handleConfirm() {
+    setConfirmLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${id}/confirm`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? "確定に失敗しました");
+        return;
+      }
+      router.refresh();
+      const detail = await fetch(`/api/admin/reservations/${id}`);
+      if (detail.ok) {
+        const updated = await detail.json();
+        setReservation(updated.reservation);
+        setOptions(updated.options ?? []);
+      }
+    } catch {
+      alert("通信エラーが発生しました");
+    } finally {
+      setConfirmLoading(false);
+    }
+  }
 
   async function handleCancel() {
     setCancelLoading(true);
@@ -180,6 +206,16 @@ export function ReservationDetail() {
             >
               {st.label}
             </span>
+            {reservation.status === "pending" && (
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={confirmLoading}
+                className="rounded-lg border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 cursor-pointer disabled:opacity-50"
+              >
+                {confirmLoading ? "処理中..." : "手動確定"}
+              </button>
+            )}
             {cancellable && (
               <button
                 type="button"
