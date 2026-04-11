@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { TimeSlot } from "@/app/api/availability/route";
 import type { PricingType } from "@/lib/types";
 
@@ -29,23 +30,27 @@ export function TimeDropdown({
   onSelect,
   pricingType,
 }: Props) {
+  const [addingNew, setAddingNew] = useState(false);
   const availableSlots = slots.filter((s) => s.available);
 
   // 選択中の範囲一覧を算出
   const ranges = getRanges(selectedSlots);
   const lastRangeIdx = ranges.length - 1;
-  const currentStart =
-    ranges.length > 0 ? ranges[lastRangeIdx].start : "";
-  const currentEnd =
-    ranges.length > 0 ? ranges[lastRangeIdx].end : "";
 
-  // 確定済みの範囲（最後の範囲を除く）のスロットのみ occupiedSet に入れる
-  // → 現在編集中の範囲は除外されるので、自分の開始/終了が選択肢に残る
-  const confirmedSlots = selectedSlots.filter((s) => {
-    if (lastRangeIdx < 0) return false;
-    const lastRange = ranges[lastRangeIdx];
-    return s.startTime < lastRange.start || s.startTime >= lastRange.end;
-  });
+  // addingNew: 全範囲を確定済みとして扱い、ドロップダウンを空にする
+  const currentStart =
+    !addingNew && ranges.length > 0 ? ranges[lastRangeIdx].start : "";
+  const currentEnd =
+    !addingNew && ranges.length > 0 ? ranges[lastRangeIdx].end : "";
+
+  // addingNew の場合は全スロットが確定済み、そうでなければ最後の範囲を除く
+  const confirmedSlots = addingNew
+    ? [...selectedSlots]
+    : selectedSlots.filter((s) => {
+        if (lastRangeIdx < 0) return false;
+        const lastRange = ranges[lastRangeIdx];
+        return s.startTime < lastRange.start || s.startTime >= lastRange.end;
+      });
   const occupiedSet = new Set(confirmedSlots.map((s) => s.startTime));
 
   // 開始時間の選択肢: 空き枠 かつ 確定済み範囲と重複しない
@@ -69,12 +74,12 @@ export function TimeDropdown({
 
   function handleStartChange(startTime: string) {
     if (!startTime) {
-      // 最後の範囲を削除
       onSelect(confirmedSlots);
       return;
     }
     const slot = slots.find((s) => s.startTime === startTime);
     if (slot) {
+      setAddingNew(false);
       onSelect([...confirmedSlots, slot]);
     }
   }
@@ -112,9 +117,7 @@ export function TimeDropdown({
   }
 
   function handleAddRange() {
-    // 現在の選択を確定し、新しい範囲の追加待ちにする
-    // (startOptions から選ぶことで新しい範囲が始まる)
-    // 何もしない — 次の開始時間選択で新しい範囲が追加される
+    setAddingNew(true);
   }
 
   function handleRemoveRange(rangeIdx: number) {
@@ -122,6 +125,7 @@ export function TimeDropdown({
     const remaining = selectedSlots.filter(
       (s) => s.startTime < range.start || s.startTime >= range.end,
     );
+    setAddingNew(false);
     onSelect(remaining);
   }
 
@@ -169,7 +173,7 @@ export function TimeDropdown({
     <div className="space-y-5">
       {/* 確定済みの範囲一覧（daily で複数ある場合） */}
       {pricingType === "daily" &&
-        ranges.slice(0, -1).map((range, i) => (
+        (addingNew ? ranges : ranges.slice(0, -1)).map((range, i) => (
           <div
             key={range.start}
             className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2"
