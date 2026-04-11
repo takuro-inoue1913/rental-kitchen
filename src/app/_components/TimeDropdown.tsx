@@ -291,11 +291,12 @@ export function TimeDropdown({
       </div>
 
       {/* 日単位: 枠を追加ボタン（タイムラインバーの上） */}
-      {pricingType === "daily" && selectedSlots.length > 0 && startOptions.length > 0 && !addingNew && (
+      {pricingType === "daily" && selectedSlots.length > 0 && !addingNew && (
         <button
           type="button"
           onClick={handleAddRange}
-          className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
+          disabled={startOptions.length === 0}
+          className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + 枠を追加
         </button>
