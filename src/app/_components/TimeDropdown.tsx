@@ -33,12 +33,22 @@ export function TimeDropdown({
 
   // 選択中の範囲一覧を算出
   const ranges = getRanges(selectedSlots);
+  const lastRangeIdx = ranges.length - 1;
   const currentStart =
-    ranges.length > 0 ? ranges[ranges.length - 1].start : "";
-  const currentEnd = ranges.length > 0 ? ranges[ranges.length - 1].end : "";
+    ranges.length > 0 ? ranges[lastRangeIdx].start : "";
+  const currentEnd =
+    ranges.length > 0 ? ranges[lastRangeIdx].end : "";
 
-  // 開始時間の選択肢: 空き枠 かつ 既存選択と重複しない
-  const occupiedSet = new Set(selectedSlots.map((s) => s.startTime));
+  // 確定済みの範囲（最後の範囲を除く）のスロットのみ occupiedSet に入れる
+  // → 現在編集中の範囲は除外されるので、自分の開始/終了が選択肢に残る
+  const confirmedSlots = selectedSlots.filter((s) => {
+    if (lastRangeIdx < 0) return false;
+    const lastRange = ranges[lastRangeIdx];
+    return s.startTime < lastRange.start || s.startTime >= lastRange.end;
+  });
+  const occupiedSet = new Set(confirmedSlots.map((s) => s.startTime));
+
+  // 開始時間の選択肢: 空き枠 かつ 確定済み範囲と重複しない
   const startOptions = availableSlots
     .filter((s) => !occupiedSet.has(s.startTime))
     .map((s) => s.startTime);
@@ -49,26 +59,13 @@ export function TimeDropdown({
     const startIdx = slots.findIndex((s) => s.startTime === currentStart);
     if (startIdx !== -1) {
       for (let i = startIdx; i < slots.length; i++) {
-        // 予約済み or 他の範囲で選択済みの枠に当たったら止める
-        if (
-          !slots[i].available ||
-          (occupiedSet.has(slots[i].startTime) &&
-            slots[i].startTime !== currentStart)
-        ) {
+        if (!slots[i].available || occupiedSet.has(slots[i].startTime)) {
           break;
         }
         endOptions.push(slots[i].endTime);
       }
     }
   }
-
-  // 最後の範囲のみ変更可能（追加中の範囲）
-  const lastRangeIdx = ranges.length - 1;
-  const confirmedSlots = selectedSlots.filter((s) => {
-    if (lastRangeIdx < 0) return false;
-    const lastRange = ranges[lastRangeIdx];
-    return s.startTime < lastRange.start || s.startTime >= lastRange.end;
-  });
 
   function handleStartChange(startTime: string) {
     if (!startTime) {
