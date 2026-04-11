@@ -21,7 +21,9 @@ export type {
  * GET /api/availability?date=2026-04-10
  *
  * 指定日の空き枠を返す。
- * Supabase の reservations + Google カレンダーの予約を突き合わせて判定。
+ * Google カレンダーの予約で空き判定する。
+ * （確定済み予約は Webhook で Google カレンダーに自動反映されるため、
+ *   カレンダーが信頼できるソースとなる）
  */
 export async function GET(request: NextRequest) {
   const dateParam = request.nextUrl.searchParams.get("date");
@@ -63,8 +65,6 @@ export async function GET(request: NextRequest) {
 
   const rule = rules[0];
 
-  // Google カレンダーのイベントのみで空き判定
-  // TODO: Phase 6 で双方向同期実装後、Supabase の reservations も含める
   const calendarEvents = await getCalendarEvents(dateParam);
 
   return Response.json(generateAvailability(dateParam, rule, calendarEvents));
