@@ -112,6 +112,23 @@ export function OptionsManager() {
     setSavingId(null);
   }
 
+  async function handleDelete(opt: Option) {
+    if (!confirm(`「${opt.name}」を削除しますか？`)) return;
+    setSavingId(opt.id);
+    setMessage(null);
+    const res = await fetch(`/api/admin/options?id=${opt.id}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setOptions((prev) => prev.filter((o) => o.id !== opt.id));
+      setMessage({ type: "success", text: "削除しました" });
+    } else {
+      const data = await res.json();
+      setMessage({ type: "error", text: data.error ?? "削除に失敗しました" });
+    }
+    setSavingId(null);
+  }
+
   async function handleToggle(opt: Option) {
     setSavingId(opt.id);
     setMessage(null);
@@ -279,6 +296,14 @@ export function OptionsManager() {
                   } disabled:opacity-50`}
                 >
                   {opt.is_active ? "無効化" : "有効化"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(opt)}
+                  disabled={savingId === opt.id}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 cursor-pointer transition-colors"
+                >
+                  削除
                 </button>
               </div>
             </div>
