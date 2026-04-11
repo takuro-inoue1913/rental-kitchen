@@ -169,99 +169,137 @@ export function TimeDropdown({
   const selectClass =
     "rounded-lg border border-zinc-300 px-2 py-2 text-sm text-zinc-900 bg-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer";
 
+  const confirmedRanges = addingNew ? ranges : ranges.slice(0, -1);
+  const disabledSelectClass =
+    "rounded-lg border border-zinc-200 px-2 py-2 text-sm text-zinc-400 bg-zinc-50";
+
   return (
     <div className="space-y-5">
-      {/* 確定済みの範囲一覧（daily で複数ある場合） */}
+      {/* 確定済みの範囲一覧（disabled なドロップダウン風 UI） */}
       {pricingType === "daily" &&
-        (addingNew ? ranges : ranges.slice(0, -1)).map((range, i) => (
-          <div
-            key={range.start}
-            className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2"
-          >
-            <span className="text-sm font-medium text-amber-700">
-              {range.start} 〜 {range.end}（{range.hours}時間）
-            </span>
-            <button
-              type="button"
-              onClick={() => handleRemoveRange(i)}
-              className="text-xs text-red-500 hover:text-red-700 cursor-pointer"
-            >
-              削除
-            </button>
+        confirmedRanges.map((range, i) => (
+          <div key={range.start} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-500">枠 {i + 1}</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveRange(i)}
+                className="text-xs text-red-500 hover:text-red-700 cursor-pointer"
+              >
+                削除
+              </button>
+            </div>
+            <div className="flex items-end justify-center gap-1">
+              <div className="flex items-center gap-0.5">
+                <div className={disabledSelectClass}>
+                  {parseTime(range.start).hour}
+                </div>
+                <span className="text-zinc-300 font-medium">:</span>
+                <div className={disabledSelectClass}>
+                  {parseTime(range.start).minute}
+                </div>
+              </div>
+              <span className="text-zinc-300 text-lg pb-0.5 px-2">〜</span>
+              <div className="flex items-center gap-0.5">
+                <div className={disabledSelectClass}>
+                  {parseTime(range.end).hour}
+                </div>
+                <span className="text-zinc-300 font-medium">:</span>
+                <div className={disabledSelectClass}>
+                  {parseTime(range.end).minute}
+                </div>
+              </div>
+            </div>
           </div>
         ))}
 
-      {/* 枠ドロップダウン */}
-      <div className="flex items-end justify-center gap-1 flex-wrap">
-        {/* 開始時間 */}
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">開始</label>
-          <div className="flex items-center gap-0.5">
-            <select
-              value={currentStart ? parseTime(currentStart).hour : ""}
-              onChange={(e) => handleStartHourChange(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">--</option>
-              {startHours.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-            <span className="text-zinc-500 font-medium">:</span>
-            <select
-              value={currentStart ? parseTime(currentStart).minute : ""}
-              onChange={(e) => handleStartMinuteChange(e.target.value)}
-              disabled={!currentStart}
-              className={`${selectClass} disabled:opacity-50`}
-            >
-              <option value="">--</option>
-              {startMinutes.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+      {/* アクティブな枠ドロップダウン */}
+      <div>
+        {pricingType === "daily" && confirmedRanges.length > 0 && (
+          <span className="block text-xs text-zinc-500 mb-1">
+            枠 {confirmedRanges.length + 1}
+          </span>
+        )}
+        <div className="flex items-end justify-center gap-1 flex-wrap">
+          <div>
+            <label className="block text-xs text-zinc-500 mb-1">開始</label>
+            <div className="flex items-center gap-0.5">
+              <select
+                value={currentStart ? parseTime(currentStart).hour : ""}
+                onChange={(e) => handleStartHourChange(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">--</option>
+                {startHours.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <span className="text-zinc-500 font-medium">:</span>
+              <select
+                value={currentStart ? parseTime(currentStart).minute : ""}
+                onChange={(e) => handleStartMinuteChange(e.target.value)}
+                disabled={!currentStart}
+                className={`${selectClass} disabled:opacity-50`}
+              >
+                <option value="">--</option>
+                {startMinutes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
 
-        <span className="text-zinc-400 text-lg pb-2 px-2">〜</span>
+          <span className="text-zinc-400 text-lg pb-2 px-2">〜</span>
 
-        {/* 終了時間 */}
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">終了</label>
-          <div className="flex items-center gap-0.5">
-            <select
-              value={currentEnd ? parseTime(currentEnd).hour : ""}
-              onChange={(e) => handleEndHourChange(e.target.value)}
-              disabled={!currentStart}
-              className={`${selectClass} disabled:opacity-50`}
-            >
-              <option value="">--</option>
-              {endHours.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-            <span className="text-zinc-500 font-medium">:</span>
-            <select
-              value={currentEnd ? parseTime(currentEnd).minute : ""}
-              onChange={(e) => handleEndMinuteChange(e.target.value)}
-              disabled={!currentEnd}
-              className={`${selectClass} disabled:opacity-50`}
-            >
-              <option value="">--</option>
-              {endMinutes.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+          <div>
+            <label className="block text-xs text-zinc-500 mb-1">終了</label>
+            <div className="flex items-center gap-0.5">
+              <select
+                value={currentEnd ? parseTime(currentEnd).hour : ""}
+                onChange={(e) => handleEndHourChange(e.target.value)}
+                disabled={!currentStart}
+                className={`${selectClass} disabled:opacity-50`}
+              >
+                <option value="">--</option>
+                {endHours.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <span className="text-zinc-500 font-medium">:</span>
+              <select
+                value={currentEnd ? parseTime(currentEnd).minute : ""}
+                onChange={(e) => handleEndMinuteChange(e.target.value)}
+                disabled={!currentEnd}
+                className={`${selectClass} disabled:opacity-50`}
+              >
+                <option value="">--</option>
+                {endMinutes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* 日単位: 枠を追加ボタン（タイムラインバーの上） */}
+      {pricingType === "daily" && selectedSlots.length > 0 && startOptions.length > 0 && !addingNew && (
+        <button
+          type="button"
+          onClick={handleAddRange}
+          className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
+        >
+          + 枠を追加
+        </button>
+      )}
 
       {/* タイムラインバー */}
       <div>
@@ -290,7 +328,6 @@ export function TimeDropdown({
             })}
           </div>
         </div>
-        {/* 時間ラベル */}
         <div className="relative h-4 mt-1">
           {slots
             .filter((_, i) => i % Math.max(1, Math.floor(slots.length / 6)) === 0)
@@ -321,17 +358,6 @@ export function TimeDropdown({
             {totalHours}時間選択中
           </span>
         </div>
-      )}
-
-      {/* 日単位: 枠を追加ボタン */}
-      {pricingType === "daily" && selectedSlots.length > 0 && startOptions.length > 0 && (
-        <button
-          type="button"
-          onClick={handleAddRange}
-          className="w-full rounded-lg border border-dashed border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
-        >
-          + 枠を追加
-        </button>
       )}
     </div>
   );
