@@ -71,10 +71,21 @@ export async function POST(
         payment_intent: reservation.stripe_payment_intent_id,
         amount: policy.refundAmount,
       });
-      await auth.adminClient
+
+      const { error: refundAmountUpdateError } = await auth.adminClient
         .from("reservations")
         .update({ refund_amount: policy.refundAmount })
         .eq("id", id);
+
+      if (refundAmountUpdateError) {
+        console.error("Refund amount update failed after Stripe refund:", {
+          reservationId: id,
+          refundAmount: policy.refundAmount,
+          error: refundAmountUpdateError,
+        });
+        refundWarning =
+          "キャンセルとStripe返金は完了しましたが、返金額の記録に失敗しました。管理画面またはDBを確認してください。";
+      }
     } catch (err) {
       console.error("Stripe refund failed:", err);
       refundWarning =
