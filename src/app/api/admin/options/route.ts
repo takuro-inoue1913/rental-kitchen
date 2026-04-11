@@ -96,3 +96,49 @@ export async function PUT(request: NextRequest) {
 
   return Response.json({ success: true });
 }
+
+/**
+ * DELETE /api/admin/options
+ * オプション削除（予約で使用中の場合は削除不可）
+ */
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return Response.json({ error: "IDは必須です" }, { status: 400 });
+  }
+
+  // 予約で使用中か確認
+  const { count } = await auth.adminClient
+    .from("reservation_options")
+    .select("id", { count: "exact", head: true })
+    .eq("option_id", id);
+
+  if (count && count > 0) {
+    return Response.json(
+      {
+        error:
+          "このオプションは予約で使用されているため削除できません。無効化をお試しください。",
+      },
+      { status: 409 },
+    );
+  }
+
+  const { error } = await auth.adminClient
+    .from("options")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return Response.json(
+      { error: `削除に失敗しました: ${error.message}` },
+      { status: 500 },
+    );
+  }
+
+  return Response.json({ success: true });
+}
