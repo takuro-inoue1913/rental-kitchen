@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", reservationId)
         .eq("status", "pending")
-        .select("id, date, start_time, end_time, guest_name, guest_email")
-        .single();
+        .select("id, date, start_time, end_time, google_event_id")
+        .maybeSingle();
 
-      if (error || !updated) {
+      if (error) {
         console.error("Webhook: failed to confirm reservation:", error);
         return Response.json(
           { error: "DB update failed" },
@@ -70,27 +70,33 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Google カレンダーにイベントを作成
-      const guestLabel = updated.guest_name || updated.guest_email || "ゲスト";
-      const eventId = await createCalendarEvent({
-        date: updated.date,
-        startTime: updated.start_time.slice(0, 5),
-        endTime: updated.end_time.slice(0, 5),
-        summary: `【予約】${guestLabel} - ${SITE_NAME}`,
-        description: [
-          `予約ID: ${updated.id}`,
-          updated.guest_name ? `名前: ${updated.guest_name}` : null,
-          updated.guest_email ? `メール: ${updated.guest_email}` : null,
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      });
+      // 0件更新 = 既に confirmed（Webhook 再送）→ 冪等に成功扱い
+      if (!updated) break;
 
-      if (eventId) {
-        await supabase
-          .from("reservations")
-          .update({ google_event_id: eventId })
-          .eq("id", updated.id);
+      // Google カレンダーにイベントを作成（未作成の場合のみ）
+      if (!updated.google_event_id) {
+        const eventId = await createCalendarEvent({
+          date: updated.date,
+          startTime: updated.start_time.slice(0, 5),
+          endTime: updated.end_time.slice(0, 5),
+          summary: `【予約】${SITE_NAME}`,
+          description: [
+            `予約ID: ${updated.id}`,
+            `時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
+          ].join("\n"),
+        });
+
+        if (eventId) {
+          await supabase
+            .from("reservations")
+            .update({ google_event_id: eventId })
+            .eq("id", updated.id);
+        } else {
+          // カレンダー作成失敗 → ログに記録。次回の cron 同期で手動対応可能
+          console.error("Webhook: Google Calendar event creation failed", {
+            reservationId: updated.id,
+          });
+        }
       }
       break;
     }
