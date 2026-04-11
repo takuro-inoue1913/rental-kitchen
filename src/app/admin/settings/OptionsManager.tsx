@@ -65,6 +65,7 @@ export function OptionsManager() {
 
   function cancelEdit() {
     setEditingId(null);
+    setMessage(null);
   }
 
   async function handleSaveEdit(opt: Option) {
