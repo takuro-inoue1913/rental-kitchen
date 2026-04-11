@@ -74,6 +74,17 @@ export async function POST(request: NextRequest) {
 
       // Google カレンダーにイベントを作成（未作成の場合のみ）
       if (!updated.google_event_id) {
+        // 選択オプション情報を取得
+        const { data: options } = await supabase
+          .from("reservation_options")
+          .select("quantity, price_at_booking, option:options(name)")
+          .eq("reservation_id", updated.id);
+
+        const optionLines = (options ?? []).map((o) => {
+          const name = (o.option as { name: string } | null)?.name ?? "オプション";
+          return `  - ${name} ×${o.quantity}（¥${o.price_at_booking.toLocaleString()}）`;
+        });
+
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
         const eventId = await createCalendarEvent({
           date: updated.date,
@@ -85,6 +96,9 @@ export async function POST(request: NextRequest) {
             `予約者名: ${updated.guest_name ?? "—"}`,
             `メール: ${updated.guest_email ?? "—"}`,
             `予約時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
+            ...(optionLines.length > 0
+              ? ["", "オプション:", ...optionLines]
+              : []),
             "",
             `管理画面: ${siteUrl}/admin/reservations/${updated.id}`,
           ].join("\n"),
