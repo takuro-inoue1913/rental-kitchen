@@ -2,6 +2,7 @@ import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRefund, isCancellable } from "@/lib/cancellation";
+import { deleteCalendarEvent } from "@/lib/google-calendar";
 import type { NextRequest } from "next/server";
 
 /**
@@ -31,7 +32,7 @@ export async function POST(
   const { data: reservation, error: fetchError } = await supabase
     .from("reservations")
     .select(
-      "id, user_id, date, status, total_price, stripe_payment_intent_id",
+      "id, user_id, date, status, total_price, stripe_payment_intent_id, google_event_id",
     )
     .eq("id", id)
     .single();
@@ -98,6 +99,11 @@ export async function POST(
       refundWarning =
         "キャンセルは完了しましたが返金処理に失敗しました。お手数ですがお問い合わせください。";
     }
+  }
+
+  // 8. Google カレンダーのイベントを削除
+  if (reservation.google_event_id) {
+    await deleteCalendarEvent(reservation.google_event_id);
   }
 
   return Response.json({

@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { stripe } from "@/lib/stripe";
 import { calculateRefund, isCancellable } from "@/lib/cancellation";
+import { deleteCalendarEvent } from "@/lib/google-calendar";
 import type { NextRequest } from "next/server";
 
 /**
@@ -24,7 +25,7 @@ export async function POST(
   const { data: reservation, error: fetchError } = await auth.adminClient
     .from("reservations")
     .select(
-      "id, user_id, date, status, total_price, stripe_payment_intent_id",
+      "id, user_id, date, status, total_price, stripe_payment_intent_id, google_event_id",
     )
     .eq("id", id)
     .single();
@@ -91,6 +92,11 @@ export async function POST(
       refundWarning =
         "キャンセルは完了しましたが返金処理に失敗しました。Stripe ダッシュボードから手動で返金してください。";
     }
+  }
+
+  // 6. Google カレンダーのイベントを削除
+  if (reservation.google_event_id) {
+    await deleteCalendarEvent(reservation.google_event_id);
   }
 
   return Response.json({
