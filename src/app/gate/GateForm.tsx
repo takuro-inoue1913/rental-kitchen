@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export function GateForm() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,8 +22,8 @@ export function GateForm() {
       });
 
       if (res.ok) {
-        router.push("/");
-        router.refresh();
+        window.location.href = "/";
+        return;
       } else {
         setError("アクセスコードが正しくありません");
       }
