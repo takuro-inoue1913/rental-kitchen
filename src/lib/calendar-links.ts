@@ -17,12 +17,29 @@ export function buildCalendarLinks(params: CalendarLinkParams): {
   const { date, startTime, endTime, title, location, description = "" } =
     params;
 
+  // endTime が "24:00" の場合は翌日の "00:00" に繰り上げる
+  const resolveEndDate = (d: string, t: string): { date: string; time: string } => {
+    const hh = t.slice(0, 2);
+    if (hh === "24") {
+      const next = new Date(d + "T00:00:00");
+      next.setDate(next.getDate() + 1);
+      const y = next.getFullYear();
+      const m = String(next.getMonth() + 1).padStart(2, "0");
+      const dd = String(next.getDate()).padStart(2, "0");
+      return { date: `${y}-${m}-${dd}`, time: "00:00" };
+    }
+    return { date: d, time: t.slice(0, 5) };
+  };
+
+  const endResolved = resolveEndDate(date, endTime);
+
   const hhmm = (t: string) => t.slice(0, 5).replace(":", "");
   const dateCompact = date.replace(/-/g, "");
+  const endDateCompact = endResolved.date.replace(/-/g, "");
 
   // Google Calendar: YYYYMMDDTHHmmss 形式 + ctz で Asia/Tokyo を指定
   const googleStart = `${dateCompact}T${hhmm(startTime)}00`;
-  const googleEnd = `${dateCompact}T${hhmm(endTime)}00`;
+  const googleEnd = `${endDateCompact}T${hhmm(endResolved.time)}00`;
   const googleUrl = new URL(
     "https://calendar.google.com/calendar/render"
   );
@@ -36,9 +53,8 @@ export function buildCalendarLinks(params: CalendarLinkParams): {
   }
 
   // Outlook: ISO 8601 (+09:00) 形式
-  const hhmm2 = (t: string) => t.slice(0, 5);
-  const outlookStart = `${date}T${hhmm2(startTime)}:00+09:00`;
-  const outlookEnd = `${date}T${hhmm2(endTime)}:00+09:00`;
+  const outlookStart = `${date}T${startTime.slice(0, 5)}:00+09:00`;
+  const outlookEnd = `${endResolved.date}T${endResolved.time}:00+09:00`;
   const outlookUrl = new URL(
     "https://outlook.live.com/calendar/0/action/compose"
   );

@@ -95,4 +95,40 @@ describe("buildCalendarLinks", () => {
       );
     });
   });
+
+  describe("endTime 24:00（日付またぎ）", () => {
+    it("Google Calendar の endDate が翌日 00:00 になる", () => {
+      const { google } = buildCalendarLinks({
+        ...baseParams,
+        endTime: "24:00",
+      });
+      const url = new URL(google);
+      expect(url.searchParams.get("dates")).toBe(
+        "20260415T100000/20260416T000000"
+      );
+    });
+
+    it("Outlook の enddt が翌日 00:00 になる", () => {
+      const { outlook } = buildCalendarLinks({
+        ...baseParams,
+        endTime: "24:00",
+      });
+      const url = new URL(outlook);
+      expect(url.searchParams.get("enddt")).toBe(
+        "2026-04-16T00:00:00+09:00"
+      );
+    });
+
+    it("月末の 24:00 で翌月に繰り上がる", () => {
+      const { google } = buildCalendarLinks({
+        ...baseParams,
+        date: "2026-04-30",
+        endTime: "24:00",
+      });
+      const url = new URL(google);
+      expect(url.searchParams.get("dates")).toBe(
+        "20260430T100000/20260501T000000"
+      );
+    });
+  });
 });
