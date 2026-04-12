@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { calculateTaxBreakdown } from "@/lib/tax";
 import type { TimeSlot } from "@/app/api/availability/route";
 import type { Database, PricingType } from "@/lib/types";
 
@@ -86,6 +87,13 @@ export function BookingSummary({
             ¥{totalPrice.toLocaleString()}
           </dd>
         </div>
+        {totalPrice > 0 && (
+          <div className="text-right">
+            <span className="text-xs text-zinc-400">
+              （税抜 ¥{calculateTaxBreakdown(totalPrice).taxExcludedAmount.toLocaleString()} + 消費税 ¥{calculateTaxBreakdown(totalPrice).taxAmount.toLocaleString()}）
+            </span>
+          </div>
+        )}
       </dl>
     </div>
   );
