@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   const response = Response.json({ success: true });
   response.headers.set(
     "Set-Cookie",
-    `${GATE_COOKIE_NAME}=${hash}; Path=/; Max-Age=${GATE_COOKIE_MAX_AGE}; SameSite=Lax`,
+    `${GATE_COOKIE_NAME}=${hash}; Path=/; Max-Age=${GATE_COOKIE_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`,
   );
   return response;
 }
