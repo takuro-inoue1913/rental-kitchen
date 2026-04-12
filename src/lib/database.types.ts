@@ -73,7 +73,6 @@ export type Database = {
       }
       invoice_settings: {
         Row: {
-          bank_info: string | null
           id: string
           issuer_address: string
           issuer_name: string
@@ -81,7 +80,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          bank_info?: string | null
           id?: string
           issuer_address: string
           issuer_name: string
@@ -89,7 +87,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          bank_info?: string | null
           id?: string
           issuer_address?: string
           issuer_name?: string
