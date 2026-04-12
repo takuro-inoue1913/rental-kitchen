@@ -39,12 +39,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 実在する日付かどうか検証
+  const parsed = new Date(date + "T00:00:00");
+  if (
+    isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== date
+  ) {
+    return Response.json(
+      { error: "存在しない日付です" },
+      { status: 400 },
+    );
+  }
+
   // 重複チェック
-  const { data: existing } = await auth.adminClient
+  const { data: existing, error: existingError } = await auth.adminClient
     .from("blocked_dates")
     .select("id")
     .eq("date", date)
     .maybeSingle();
+
+  if (existingError) {
+    console.error("blocked_dates existence check failed:", existingError);
+    return Response.json({ error: existingError.message }, { status: 500 });
+  }
 
   if (existing) {
     return Response.json(
@@ -60,6 +77,13 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
+    // 同時リクエストによる一意制約違反
+    if (error.code === "23505") {
+      return Response.json(
+        { error: "この日付は既に休業日として登録されています" },
+        { status: 409 },
+      );
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 
