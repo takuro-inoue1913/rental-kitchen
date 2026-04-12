@@ -28,11 +28,14 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "アクセスコードが正しくありません" }, { status: 401 });
   }
 
-  const hash = hashAccessCode(expected);
+  const hash = await hashAccessCode(expected);
+  const isSecure =
+    process.env.NODE_ENV === "production" || typeof process.env.VERCEL === "string";
+  const secureAttribute = isSecure ? "; Secure" : "";
   const response = Response.json({ success: true });
   response.headers.set(
     "Set-Cookie",
-    `${GATE_COOKIE_NAME}=${hash}; Path=/; Max-Age=${GATE_COOKIE_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`,
+    `${GATE_COOKIE_NAME}=${hash}; Path=/; Max-Age=${GATE_COOKIE_MAX_AGE}; HttpOnly${secureAttribute}; SameSite=Lax`,
   );
   return response;
 }
