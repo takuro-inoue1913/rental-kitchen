@@ -39,7 +39,11 @@ export function GateForm() {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
       <div>
+        <label htmlFor="access-code" className="sr-only">
+          アクセスコード
+        </label>
         <input
+          id="access-code"
           type="password"
           value={code}
           onChange={(e) => setCode(e.target.value)}
