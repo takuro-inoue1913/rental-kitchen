@@ -155,24 +155,26 @@ export default async function ConfirmationPage({
           </dl>
         </div>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href={calendarLinks.google}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-          >
-            Google カレンダーに追加
-          </a>
-          <a
-            href={calendarLinks.outlook}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-          >
-            Outlook カレンダーに追加
-          </a>
-        </div>
+        {isConfirmed && (
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href={calendarLinks.google}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              Google カレンダーに追加
+            </a>
+            <a
+              href={calendarLinks.outlook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              Outlook カレンダーに追加
+            </a>
+          </div>
+        )}
 
         <Link
           href="/"
