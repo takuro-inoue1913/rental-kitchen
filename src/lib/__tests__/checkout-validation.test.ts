@@ -167,6 +167,30 @@ describe("parseCheckoutBody", () => {
     }
   });
 
+  it("法人利用で会社名が空白のみを拒否", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "   ",
+    });
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toContain("会社名");
+    }
+  });
+
+  it("法人利用で会社名の前後の空白が除去される", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "  株式会社テスト  ",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.companyName).toBe("株式会社テスト");
+    }
+  });
+
   it("個人利用時は法人フィールドが無視される", () => {
     const result = parseCheckoutBody({
       ...validBody,

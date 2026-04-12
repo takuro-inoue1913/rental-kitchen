@@ -65,25 +65,28 @@ export function parseCheckoutBody(
     b.billingType === "corporate" ? "corporate" : "individual";
 
   if (billingType === "corporate") {
-    if (!isNonEmptyString(b.companyName)) {
+    if (
+      !isNonEmptyString(b.companyName) ||
+      (b.companyName as string).trim().length === 0
+    ) {
       return { error: "法人利用の場合、会社名は必須です" };
     }
   }
 
   const companyName =
     billingType === "corporate" && isNonEmptyString(b.companyName)
-      ? (b.companyName as string)
+      ? (b.companyName as string).trim()
       : null;
   const companyDepartment =
     billingType === "corporate" && isNonEmptyString(b.companyDepartment)
-      ? (b.companyDepartment as string)
+      ? (b.companyDepartment as string).trim()
       : null;
   const contactPersonName =
     billingType === "corporate" && isNonEmptyString(b.contactPersonName)
-      ? (b.contactPersonName as string)
+      ? (b.contactPersonName as string).trim()
       : null;
   const usagePurpose = isNonEmptyString(b.usagePurpose)
-    ? (b.usagePurpose as string)
+    ? (b.usagePurpose as string).trim()
     : null;
 
   return {
