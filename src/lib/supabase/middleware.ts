@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
     const isBypassed = isBypassedPath(pathname);
 
     const cookie = request.cookies.get(GATE_COOKIE_NAME);
-    const expectedHash = hashAccessCode(accessCode);
+    const expectedHash = await hashAccessCode(accessCode);
     if (!isBypassed && cookie?.value !== expectedHash) {
       const url = request.nextUrl.clone();
       url.pathname = "/gate";
