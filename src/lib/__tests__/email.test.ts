@@ -97,6 +97,19 @@ describe("buildConfirmationEmail", () => {
     expect(text).toContain("お問い合わせ:");
   });
 
+  it("法人予約の場合は会社名が含まれる", () => {
+    const { text } = buildConfirmationEmail({
+      ...baseParams,
+      companyName: "株式会社テスト",
+    });
+    expect(text).toContain("会社名: 株式会社テスト");
+  });
+
+  it("個人予約の場合は会社名行がない", () => {
+    const { text } = buildConfirmationEmail(baseParams);
+    expect(text).not.toContain("会社名:");
+  });
+
   it("日曜日の日付フォーマットが正しい", () => {
     const { subject } = buildConfirmationEmail({
       ...baseParams,
