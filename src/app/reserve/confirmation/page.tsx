@@ -173,6 +173,12 @@ export default async function ConfirmationPage({
             >
               Outlook カレンダーに追加
             </a>
+            <a
+              href={`/api/reservations/${reservation.id}/receipt`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              領収書をダウンロード
+            </a>
           </div>
         )}
 

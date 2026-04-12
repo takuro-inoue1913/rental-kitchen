@@ -55,6 +55,15 @@ describe("buildCancellationEmail", () => {
     expect(text).toContain("返金額: ¥5,500");
   });
 
+  it("本文に消費税内訳を含む", () => {
+    const { text } = buildCancellationEmail(baseParams);
+    // ¥11,000 → 税抜 ¥10,000 + 消費税 ¥1,000
+    expect(text).toContain("税抜");
+    expect(text).toContain("消費税");
+    expect(text).toContain("¥10,000");
+    expect(text).toContain("¥1,000");
+  });
+
   it("予約IDが含まれる", () => {
     const { text } = buildCancellationEmail(baseParams);
     expect(text).toContain("abc12345-6789");

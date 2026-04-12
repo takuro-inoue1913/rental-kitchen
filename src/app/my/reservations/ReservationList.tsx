@@ -117,8 +117,16 @@ export function ReservationList({ reservations }: Props) {
                   ¥{r.total_price.toLocaleString()}
                 </span>
               </div>
-              {canCancel && (
-                <div className="mt-3 text-right">
+              <div className="mt-3 flex justify-end gap-4">
+                {(r.status === "confirmed" || r.status === "completed") && (
+                  <a
+                    href={`/api/reservations/${r.id}/receipt`}
+                    className="text-sm text-amber-600 hover:text-amber-700 underline underline-offset-4"
+                  >
+                    領収書
+                  </a>
+                )}
+                {canCancel && (
                   <button
                     type="button"
                     onClick={() => setCancelTarget(r)}
@@ -126,8 +134,8 @@ export function ReservationList({ reservations }: Props) {
                   >
                     キャンセル
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}

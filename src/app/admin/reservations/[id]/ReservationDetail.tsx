@@ -228,6 +228,14 @@ export function ReservationDetail() {
                 キャンセル
               </button>
             )}
+            {(reservation.status === "confirmed" || reservation.status === "completed") && (
+              <a
+                href={`/api/admin/reservations/${reservation.id}/receipt`}
+                className="rounded-lg border border-amber-300 px-3 py-1 text-xs font-medium text-amber-600 hover:bg-amber-50"
+              >
+                領収書
+              </a>
+            )}
           </div>
         </div>
 

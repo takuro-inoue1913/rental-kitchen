@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { SITE_NAME, SITE_ADDRESS, CONTACT_EMAIL } from "@/lib/constants";
+import { calculateTaxBreakdown } from "@/lib/tax";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -121,6 +122,8 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
           .join("\n")
       : "";
 
+  const tax = calculateTaxBreakdown(totalPrice);
+
   const text = [
     `${guestName} 様`,
     "",
@@ -134,6 +137,7 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     ...(optionLines ? ["", "■ オプション", optionLines] : []),
     "",
     `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,
+    `  （税抜 ¥${tax.taxExcludedAmount.toLocaleString()} + 消費税 ¥${tax.taxAmount.toLocaleString()}）`,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
     "■ キャンセルポリシー",
@@ -267,6 +271,8 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
         ]
       : [];
 
+  const tax = calculateTaxBreakdown(totalPrice);
+
   const text = [
     `${guestName} 様`,
     "",
@@ -278,6 +284,7 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
     `日付: ${formattedDate}`,
     `時間: ${startTime} 〜 ${endTime}`,
     `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,
+    `  （税抜 ¥${tax.taxExcludedAmount.toLocaleString()} + 消費税 ¥${tax.taxAmount.toLocaleString()}）`,
     ...refundLines,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
