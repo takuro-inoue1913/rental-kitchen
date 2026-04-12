@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
       const { data: reservation } = await supabase
         .from("reservations")
-        .select("id, status, date, start_time, end_time, total_price, guest_email, guest_name")
+        .select("id, status, date, start_time, end_time, total_price, guest_email, guest_name, billing_type, company_name")
         .eq("stripe_payment_intent_id", paymentIntentId)
         .single();
 
@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
               totalPrice: reservation.total_price,
               refundAmount: charge.amount_refunded,
               reservationId: reservation.id,
+              companyName: reservation.billing_type === "corporate" ? reservation.company_name : null,
             });
           } catch (err) {
             console.error("Webhook: cancellation email failed:", err);
