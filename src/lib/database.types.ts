@@ -164,10 +164,41 @@ export type Database = {
           },
         ]
       }
+      invoice_settings: {
+        Row: {
+          bank_info: string | null
+          id: string
+          issuer_address: string
+          issuer_name: string
+          issuer_registration_number: string
+          updated_at: string
+        }
+        Insert: {
+          bank_info?: string | null
+          id?: string
+          issuer_address: string
+          issuer_name: string
+          issuer_registration_number?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_info?: string | null
+          id?: string
+          issuer_address?: string
+          issuer_name?: string
+          issuer_registration_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           base_price: number
+          billing_type: string
           cancelled_at: string | null
+          company_department: string | null
+          company_name: string | null
+          contact_person_name: string | null
           created_at: string
           date: string
           end_time: string
@@ -184,11 +215,16 @@ export type Database = {
           stripe_payment_intent_id: string | null
           total_price: number
           updated_at: string
+          usage_purpose: string | null
           user_id: string | null
         }
         Insert: {
           base_price: number
+          billing_type?: string
           cancelled_at?: string | null
+          company_department?: string | null
+          company_name?: string | null
+          contact_person_name?: string | null
           created_at?: string
           date: string
           end_time: string
@@ -205,11 +241,16 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           total_price: number
           updated_at?: string
+          usage_purpose?: string | null
           user_id?: string | null
         }
         Update: {
           base_price?: number
+          billing_type?: string
           cancelled_at?: string | null
+          company_department?: string | null
+          company_name?: string | null
+          contact_person_name?: string | null
           created_at?: string
           date?: string
           end_time?: string
@@ -226,6 +267,7 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           total_price?: number
           updated_at?: string
+          usage_purpose?: string | null
           user_id?: string | null
         }
         Relationships: []
