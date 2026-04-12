@@ -6,7 +6,7 @@ const baseParams = {
   date: "2026-04-15",
   startTime: "10:00",
   endTime: "14:00",
-  title: "リノスペキッチン神田TYD ご予約",
+  title: "レンタルキッチン神田 ご予約",
   location: SITE_ADDRESS,
   description: "予約番号: abc12345",
 };
