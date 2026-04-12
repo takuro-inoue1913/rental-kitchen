@@ -18,23 +18,31 @@ const GALLERY_IMAGES = [
   { src: "/images/boardgames-2.jpeg", alt: "ボードゲーム・カードゲーム" },
 ];
 
+/** 管理画面で料金変更後、最大60秒で反映 */
+export const revalidate = 60;
+
 export default async function Home() {
   const supabase = createAdminClient();
-  const { data: rules } = await supabase
+  const { data: rules, error: rulesError } = await supabase
     .from("availability_rules")
-    .select("pricing_type, price_per_slot")
+    .select("day_of_week, pricing_type, price_per_slot")
     .eq("is_active", true);
 
-  const dailyPrices = rules
-    ?.filter((r) => r.pricing_type === "daily")
+  if (rulesError) {
+    console.error("Failed to fetch availability_rules for pricing", rulesError);
+  }
+
+  // 平日 (day_of_week 1-5) と 土日祝 (day_of_week 0, 6) でグループ化
+  const weekdayPrices = rules
+    ?.filter((r) => r.day_of_week >= 1 && r.day_of_week <= 5)
     .map((r) => r.price_per_slot) ?? [];
-  const hourlyPrices = rules
-    ?.filter((r) => r.pricing_type === "hourly")
+  const weekendPrices = rules
+    ?.filter((r) => r.day_of_week === 0 || r.day_of_week === 6)
     .map((r) => r.price_per_slot) ?? [];
-  const dailyMin = dailyPrices.length > 0 ? Math.min(...dailyPrices) : 11000;
-  const hourlyMin = hourlyPrices.length > 0 ? Math.min(...hourlyPrices) : 2500;
-  const dailyHasRange = new Set(dailyPrices).size > 1;
-  const hourlyHasRange = new Set(hourlyPrices).size > 1;
+  const dailyMin = weekdayPrices.length > 0 ? Math.min(...weekdayPrices) : 11000;
+  const hourlyMin = weekendPrices.length > 0 ? Math.min(...weekendPrices) : 2500;
+  const dailyHasRange = new Set(weekdayPrices).size > 1;
+  const hourlyHasRange = new Set(weekendPrices).size > 1;
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
