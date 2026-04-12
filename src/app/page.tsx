@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_DESCRIPTION, SITE_ADDRESS } from "@/lib/constants";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HeroSlider } from "@/app/_components/HeroSlider";
 import { Gallery } from "@/app/_components/Gallery";
 import { LoadingLink } from "@/app/_components/LoadingLink";
@@ -17,7 +18,31 @@ const GALLERY_IMAGES = [
   { src: "/images/boardgames-2.jpeg", alt: "ボードゲーム・カードゲーム" },
 ];
 
-export default function Home() {
+/** 管理画面で料金変更後、最大60秒で反映 */
+export const revalidate = 60;
+
+export default async function Home() {
+  const supabase = createAdminClient();
+  const { data: rules, error: rulesError } = await supabase
+    .from("availability_rules")
+    .select("day_of_week, pricing_type, price_per_slot")
+    .eq("is_active", true);
+
+  if (rulesError) {
+    console.error("Failed to fetch availability_rules for pricing", rulesError);
+  }
+
+  // 平日 (day_of_week 1-5) と 土日祝 (day_of_week 0, 6) でグループ化
+  const weekdayPrices = rules
+    ?.filter((r) => r.day_of_week >= 1 && r.day_of_week <= 5)
+    .map((r) => r.price_per_slot) ?? [];
+  const weekendPrices = rules
+    ?.filter((r) => r.day_of_week === 0 || r.day_of_week === 6)
+    .map((r) => r.price_per_slot) ?? [];
+  const dailyMin = weekdayPrices.length > 0 ? Math.min(...weekdayPrices) : 11000;
+  const hourlyMin = weekendPrices.length > 0 ? Math.min(...weekendPrices) : 2500;
+  const dailyHasRange = new Set(weekdayPrices).size > 1;
+  const hourlyHasRange = new Set(weekendPrices).size > 1;
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
@@ -44,8 +69,8 @@ export default function Home() {
             人数制限なし。料金は曜日により異なります。
           </p>
           <div className="flex justify-center gap-6 flex-wrap">
-            <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
-            <PriceCard label="土日祝" price="2,500" unit="円/時間（税込）" sub="1時間単位" />
+            <PriceCard label="平日" price={`${dailyMin.toLocaleString()}${dailyHasRange ? "〜" : ""}`} unit="円/日（税込）" sub="丸一日貸切" />
+            <PriceCard label="土日祝" price={`${hourlyMin.toLocaleString()}${hourlyHasRange ? "〜" : ""}`} unit="円/時間（税込）" sub="1時間単位" />
           </div>
         </div>
       </section>
