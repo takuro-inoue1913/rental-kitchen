@@ -35,6 +35,7 @@ export function BookingSummary({
   );
   const optionsPrice = selectedOptions.reduce((sum, o) => sum + o.price, 0);
   const totalPrice = basePrice + optionsPrice;
+  const tax = totalPrice > 0 ? calculateTaxBreakdown(totalPrice) : null;
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -87,10 +88,10 @@ export function BookingSummary({
             ¥{totalPrice.toLocaleString()}
           </dd>
         </div>
-        {totalPrice > 0 && (
+        {tax && (
           <div className="text-right">
             <span className="text-xs text-zinc-400">
-              （税抜 ¥{calculateTaxBreakdown(totalPrice).taxExcludedAmount.toLocaleString()} + 消費税 ¥{calculateTaxBreakdown(totalPrice).taxAmount.toLocaleString()}）
+              （税抜 ¥{tax.taxExcludedAmount.toLocaleString()} + 消費税 ¥{tax.taxAmount.toLocaleString()}）
             </span>
           </div>
         )}

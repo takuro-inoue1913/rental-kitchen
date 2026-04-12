@@ -122,6 +122,8 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
           .join("\n")
       : "";
 
+  const tax = calculateTaxBreakdown(totalPrice);
+
   const text = [
     `${guestName} 様`,
     "",
@@ -135,7 +137,7 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     ...(optionLines ? ["", "■ オプション", optionLines] : []),
     "",
     `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,
-    `  （税抜 ¥${calculateTaxBreakdown(totalPrice).taxExcludedAmount.toLocaleString()} + 消費税 ¥${calculateTaxBreakdown(totalPrice).taxAmount.toLocaleString()}）`,
+    `  （税抜 ¥${tax.taxExcludedAmount.toLocaleString()} + 消費税 ¥${tax.taxAmount.toLocaleString()}）`,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
     "■ キャンセルポリシー",
@@ -269,6 +271,8 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
         ]
       : [];
 
+  const tax = calculateTaxBreakdown(totalPrice);
+
   const text = [
     `${guestName} 様`,
     "",
@@ -280,7 +284,7 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
     `日付: ${formattedDate}`,
     `時間: ${startTime} 〜 ${endTime}`,
     `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,
-    `  （税抜 ¥${calculateTaxBreakdown(totalPrice).taxExcludedAmount.toLocaleString()} + 消費税 ¥${calculateTaxBreakdown(totalPrice).taxAmount.toLocaleString()}）`,
+    `  （税抜 ¥${tax.taxExcludedAmount.toLocaleString()} + 消費税 ¥${tax.taxAmount.toLocaleString()}）`,
     ...refundLines,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
