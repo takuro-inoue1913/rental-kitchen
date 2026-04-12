@@ -23,20 +23,24 @@ function createRedirectResponse(
   return redirectResponse;
 }
 
-/** アクセスコードゲートの対象外パス */
-const GATE_BYPASS_PREFIXES = [
-  "/gate",
-  "/api/gate",
-  "/api/stripe/webhook",
-  "/api/cron/",
-];
+/** アクセスコードゲートの対象外パス（完全一致＋サブパス許可） */
+const GATE_EXACT_OR_SUB = ["/gate", "/api/gate"];
+
+function isBypassedPath(pathname: string): boolean {
+  if (GATE_EXACT_OR_SUB.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return true;
+  }
+  if (pathname === "/api/stripe/webhook") return true;
+  if (pathname.startsWith("/api/cron/")) return true;
+  return false;
+}
 
 export async function updateSession(request: NextRequest) {
   // アクセスコードゲート（SITE_ACCESS_CODE が設定されている場合のみ有効）
   const accessCode = process.env.SITE_ACCESS_CODE;
   if (accessCode) {
     const pathname = request.nextUrl.pathname;
-    const isBypassed = GATE_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+    const isBypassed = isBypassedPath(pathname);
 
     const cookie = request.cookies.get(GATE_COOKIE_NAME);
     const expectedHash = hashAccessCode(accessCode);
