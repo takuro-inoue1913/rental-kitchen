@@ -1,6 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { confirmReservation } from "@/lib/confirm-reservation";
+import { sendCancellationEmail } from "@/lib/email";
 import { NextRequest } from "next/server";
 
 /**
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
 
       const { data: reservation } = await supabase
         .from("reservations")
-        .select("id, status")
+        .select("id, status, date, start_time, end_time, total_price, guest_email, guest_name")
         .eq("stripe_payment_intent_id", paymentIntentId)
         .single();
 
@@ -117,6 +118,26 @@ export async function POST(request: NextRequest) {
           { error: "DB update failed" },
           { status: 500 }
         );
+      }
+
+      // キャンセルメール送信（fire-and-forget）
+      if (reservation.guest_email) {
+        void (async () => {
+          try {
+            await sendCancellationEmail({
+              to: reservation.guest_email!,
+              guestName: reservation.guest_name ?? "ゲスト",
+              date: reservation.date,
+              startTime: reservation.start_time.slice(0, 5),
+              endTime: reservation.end_time.slice(0, 5),
+              totalPrice: reservation.total_price,
+              refundAmount: charge.amount_refunded,
+              reservationId: reservation.id,
+            });
+          } catch (err) {
+            console.error("Webhook: cancellation email failed:", err);
+          }
+        })();
       }
       break;
     }
