@@ -42,6 +42,37 @@ function formatDate(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
 }
 
+function resolveSource(source: string) {
+  return source === "web" ? "Web" : source === "google_calendar" ? "GCal" : "手動";
+}
+
+type DisplayReservation = Reservation & {
+  statusLabel: string;
+  statusClassName: string;
+  formattedDate: string;
+  timeRange: string;
+  displayName: string;
+  displaySource: string;
+  formattedPrice: string;
+};
+
+function toDisplayReservation(r: Reservation): DisplayReservation {
+  const st = STATUS_LABELS[r.status] ?? {
+    label: r.status,
+    className: "bg-zinc-100 text-zinc-500",
+  };
+  return {
+    ...r,
+    statusLabel: st.label,
+    statusClassName: st.className,
+    formattedDate: formatDate(r.date),
+    timeRange: `${r.start_time.slice(0, 5)}-${r.end_time.slice(0, 5)}`,
+    displayName: r.guest_name || r.guest_email || "—",
+    displaySource: resolveSource(r.source),
+    formattedPrice: `¥${r.total_price.toLocaleString()}`,
+  };
+}
+
 export function ReservationTable() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,67 +151,95 @@ export function ReservationTable() {
       ) : reservations.length === 0 ? (
         <p className="text-center text-zinc-500 py-12">予約がありません</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
-                <th className="pb-2 font-medium">日付</th>
-                <th className="pb-2 font-medium">時間</th>
-                <th className="pb-2 font-medium">ゲスト</th>
-                <th className="pb-2 font-medium">料金</th>
-                <th className="pb-2 font-medium">ステータス</th>
-                <th className="pb-2 font-medium">経路</th>
-                <th className="pb-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {reservations.map((r) => {
-                const st = STATUS_LABELS[r.status] ?? {
-                  label: r.status,
-                  className: "bg-zinc-100 text-zinc-500",
-                };
-                return (
-                  <tr key={r.id} className="hover:bg-zinc-50 text-zinc-900">
-                    <td className="py-3 whitespace-nowrap">
-                      {formatDate(r.date)}
-                    </td>
-                    <td className="py-3 whitespace-nowrap text-zinc-600">
-                      {r.start_time.slice(0, 5)}-{r.end_time.slice(0, 5)}
-                    </td>
-                    <td className="py-3">
-                      {r.guest_name || r.guest_email || "—"}
-                    </td>
-                    <td className="py-3 whitespace-nowrap font-medium">
-                      ¥{r.total_price.toLocaleString()}
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${st.className}`}
-                      >
-                        {st.label}
+        (() => {
+          const rows = reservations.map(toDisplayReservation);
+          return (
+            <>
+              {/* モバイル: カード表示 */}
+              <div className="space-y-3 md:hidden">
+                {rows.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/admin/reservations/${r.id}`}
+                    className="block rounded-lg border border-zinc-200 p-3 hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-medium text-sm text-zinc-900">
+                        {r.formattedDate}
                       </span>
-                    </td>
-                    <td className="py-3 text-zinc-500 text-xs">
-                      {r.source === "web"
-                        ? "Web"
-                        : r.source === "google_calendar"
-                          ? "GCal"
-                          : "手動"}
-                    </td>
-                    <td className="py-3 text-right">
-                      <Link
-                        href={`/admin/reservations/${r.id}`}
-                        className="text-xs text-amber-600 hover:text-amber-700 underline underline-offset-4"
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.statusClassName}`}
                       >
-                        詳細
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                        {r.statusLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-zinc-500">
+                      <span>{r.timeRange}</span>
+                      <span className="font-medium text-sm text-zinc-900">
+                        {r.formattedPrice}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5 text-xs text-zinc-500">
+                      <span>{r.displayName}</span>
+                      <span>{r.displaySource}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* デスクトップ: テーブル表示 */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
+                      <th className="pb-2 font-medium">日付</th>
+                      <th className="pb-2 font-medium">時間</th>
+                      <th className="pb-2 font-medium">ゲスト</th>
+                      <th className="pb-2 font-medium">料金</th>
+                      <th className="pb-2 font-medium">ステータス</th>
+                      <th className="pb-2 font-medium">経路</th>
+                      <th className="pb-2" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {rows.map((r) => (
+                      <tr key={r.id} className="hover:bg-zinc-50 text-zinc-900">
+                        <td className="py-3 whitespace-nowrap">
+                          {r.formattedDate}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-zinc-600">
+                          {r.timeRange}
+                        </td>
+                        <td className="py-3">{r.displayName}</td>
+                        <td className="py-3 whitespace-nowrap font-medium">
+                          {r.formattedPrice}
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${r.statusClassName}`}
+                          >
+                            {r.statusLabel}
+                          </span>
+                        </td>
+                        <td className="py-3 text-zinc-500 text-xs">
+                          {r.displaySource}
+                        </td>
+                        <td className="py-3 text-right">
+                          <Link
+                            href={`/admin/reservations/${r.id}`}
+                            className="text-xs text-amber-600 hover:text-amber-700 underline underline-offset-4"
+                          >
+                            詳細
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          );
+        })()
       )}
     </div>
   );

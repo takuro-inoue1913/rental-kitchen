@@ -196,11 +196,11 @@ export function ReservationDetail() {
       </Link>
 
       <div className="rounded-xl border border-zinc-200 bg-white p-6 space-y-1">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h2 className="text-lg font-semibold text-zinc-900">
             {formatDate(reservation.date)}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={`inline-block rounded-full px-3 py-0.5 text-xs font-medium ${st.className}`}
             >

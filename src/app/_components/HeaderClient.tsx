@@ -53,20 +53,20 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-4">
         <Link
           href="/"
           onClick={handleLogoClick}
-          className="text-lg font-bold text-amber-700 truncate"
+          className="min-w-0 text-base sm:text-lg font-bold text-amber-700 truncate"
         >
           {SITE_NAME}
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {!pathname.startsWith("/reserve") && (
             <LoadingLink
               href="/reserve"
-              className="h-9 rounded-full bg-amber-600 px-5 text-sm text-white font-medium transition-colors hover:bg-amber-700"
+              className="h-9 rounded-full bg-amber-600 px-3 sm:px-5 text-xs sm:text-sm text-white font-medium transition-colors hover:bg-amber-700"
             >
               予約する
             </LoadingLink>
@@ -133,7 +133,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
           ) : (
             <LoadingLink
               href="/auth/login"
-              className="h-9 rounded-full border border-zinc-300 px-4 text-sm text-zinc-700 font-medium transition-colors hover:bg-zinc-50"
+              className="h-9 rounded-full border border-zinc-300 px-3 sm:px-4 text-xs sm:text-sm text-zinc-700 font-medium transition-colors hover:bg-zinc-50"
             >
               ログイン
             </LoadingLink>
