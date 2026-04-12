@@ -71,6 +71,33 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_settings: {
+        Row: {
+          bank_info: string | null
+          id: string
+          issuer_address: string
+          issuer_name: string
+          issuer_registration_number: string
+          updated_at: string
+        }
+        Insert: {
+          bank_info?: string | null
+          id?: string
+          issuer_address: string
+          issuer_name: string
+          issuer_registration_number?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_info?: string | null
+          id?: string
+          issuer_address?: string
+          issuer_name?: string
+          issuer_registration_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       options: {
         Row: {
           created_at: string
@@ -163,33 +190,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      invoice_settings: {
-        Row: {
-          bank_info: string | null
-          id: string
-          issuer_address: string
-          issuer_name: string
-          issuer_registration_number: string
-          updated_at: string
-        }
-        Insert: {
-          bank_info?: string | null
-          id?: string
-          issuer_address: string
-          issuer_name: string
-          issuer_registration_number?: string
-          updated_at?: string
-        }
-        Update: {
-          bank_info?: string | null
-          id?: string
-          issuer_address?: string
-          issuer_name?: string
-          issuer_registration_number?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       reservations: {
         Row: {
