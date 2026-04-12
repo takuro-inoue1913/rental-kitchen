@@ -24,7 +24,7 @@ export default function TokushohoPage() {
           label="メールアドレス"
           value="takuro.inoue1988@gmail.com"
         />
-        <Row label="販売URL" value="https://rental-kitchen.vercel.app/" />
+        <Row label="販売URL" value="https://rental-kitchen-kanda.com/" />
         <Row
           label="販売価格"
           value="各プランページに税込価格で表示しております。"
