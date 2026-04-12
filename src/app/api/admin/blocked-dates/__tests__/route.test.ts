@@ -28,7 +28,6 @@ function mockAdmin(chain: ReturnType<typeof createChainMock>) {
   mockedRequireAdmin.mockResolvedValue({
     ok: true,
     adminClient: chain as never,
-    response: undefined as never,
   });
 }
 
@@ -36,7 +35,6 @@ function mockUnauthorized() {
   mockedRequireAdmin.mockResolvedValue({
     ok: false,
     response: Response.json({ error: "Unauthorized" }, { status: 401 }),
-    adminClient: undefined as never,
   });
 }
 
