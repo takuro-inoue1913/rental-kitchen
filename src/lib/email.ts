@@ -1,6 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
-import { SITE_NAME } from "@/lib/constants";
+import { SITE_NAME, SITE_ADDRESS } from "@/lib/constants";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -148,7 +148,7 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     "━━━━━━━━━━━━━━━━━━━━━━━━",
     "■ アクセス",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
-    "〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301",
+    SITE_ADDRESS,
     "JR山手線 神田駅 徒歩5分",
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━",

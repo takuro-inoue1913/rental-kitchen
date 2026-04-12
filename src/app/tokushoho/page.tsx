@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SITE_ADDRESS } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "特定商取引法に基づく表記",
@@ -17,7 +18,7 @@ export default function TokushohoPage() {
         <Row label="代表者" value="井上拓郎" />
         <Row
           label="所在地"
-          value="〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301"
+          value={SITE_ADDRESS}
         />
         <Row label="電話番号" value="090-8399-4563" />
         <Row
