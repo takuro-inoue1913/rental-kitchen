@@ -2,15 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-type InvoiceSettings = {
-  id: string;
-  issuer_name: string;
-  issuer_address: string;
-  issuer_registration_number: string;
-};
-
 export function InvoiceSettingsForm() {
-  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -24,7 +16,6 @@ export function InvoiceSettingsForm() {
       .then((res) => res.json())
       .then((data) => {
         if (data.id) {
-          setSettings(data);
           setIssuerName(data.issuer_name);
           setIssuerAddress(data.issuer_address);
           setRegistrationNumber(data.issuer_registration_number);
@@ -54,7 +45,6 @@ export function InvoiceSettingsForm() {
         setMessage({ type: "error", text: data.error });
         return;
       }
-      setSettings(data);
       setMessage({ type: "success", text: "保存しました" });
     } catch {
       setMessage({ type: "error", text: "通信エラーが発生しました" });
