@@ -4,7 +4,7 @@ import { calculateTaxBreakdown } from "./tax";
 
 Font.register({
   family: "NotoSansJP",
-  src: "https://fonts.gstatic.com/s/notosansjp/v53/nKqF5uiGo4GFkIEq2YdG5IiLjQ.ttf",
+  src: process.cwd() + "/public/fonts/NotoSansJP-Regular.ttf",
 });
 
 const styles = StyleSheet.create({
