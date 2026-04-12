@@ -22,8 +22,10 @@ export async function POST(request: NextRequest) {
   if ("error" in parsed) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
-  const { date, startTime, endTime, optionIds, guestEmail, guestName } =
-    parsed.data;
+  const {
+    date, startTime, endTime, optionIds, guestEmail, guestName,
+    billingType, companyName, companyDepartment, contactPersonName, usagePurpose,
+  } = parsed.data;
 
   // user_id はクライアントから受け取らず、サーバーセッションから取得
   const authClient = await createClient();
@@ -106,6 +108,11 @@ export async function POST(request: NextRequest) {
       source: "web",
       base_price: basePrice,
       total_price: totalPrice,
+      billing_type: billingType,
+      company_name: companyName,
+      company_department: companyDepartment,
+      contact_person_name: contactPersonName,
+      usage_purpose: usagePurpose,
       ...(userId ? { user_id: userId } : {}),
       // user_id はサーバーセッションから取得（クライアント送信値は使用しない）
     })
