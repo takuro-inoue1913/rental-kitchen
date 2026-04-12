@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HeroSlider } from "@/app/_components/HeroSlider";
 import { Gallery } from "@/app/_components/Gallery";
 import { LoadingLink } from "@/app/_components/LoadingLink";
@@ -17,7 +18,17 @@ const GALLERY_IMAGES = [
   { src: "/images/boardgames-2.jpeg", alt: "ボードゲーム・カードゲーム" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const supabase = createAdminClient();
+  const { data: rules } = await supabase
+    .from("availability_rules")
+    .select("pricing_type, price_per_slot")
+    .eq("is_active", true);
+
+  const dailyRule = rules?.find((r) => r.pricing_type === "daily");
+  const hourlyRule = rules?.find((r) => r.pricing_type === "hourly");
+  const dailyPrice = dailyRule?.price_per_slot ?? 11000;
+  const hourlyPrice = hourlyRule?.price_per_slot ?? 2500;
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
@@ -44,8 +55,8 @@ export default function Home() {
             人数制限なし。料金は曜日により異なります。
           </p>
           <div className="flex justify-center gap-6 flex-wrap">
-            <PriceCard label="平日" price="11,000" unit="円/日（税込）" sub="丸一日貸切" />
-            <PriceCard label="土日祝" price="2,500" unit="円/時間（税込）" sub="1時間単位" />
+            <PriceCard label="平日" price={dailyPrice.toLocaleString()} unit="円/日（税込）" sub="丸一日貸切" />
+            <PriceCard label="土日祝" price={hourlyPrice.toLocaleString()} unit="円/時間（税込）" sub="1時間単位" />
           </div>
         </div>
       </section>
