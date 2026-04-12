@@ -21,10 +21,10 @@ export async function GET(
     return Response.json({ error: result.error }, { status: result.status });
   }
 
-  const bytes = await renderReceiptPdf(result.data);
+  const pdfBuffer = await renderReceiptPdf(result.data);
 
   const safeId = result.data.reservationId.slice(0, 8).replace(/[^a-f0-9-]/gi, "");
-  return new Response(bytes.buffer as ArrayBuffer, {
+  return new Response(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="receipt-${safeId}.pdf"`,

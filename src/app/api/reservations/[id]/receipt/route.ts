@@ -30,11 +30,11 @@ export async function GET(
   }
 
   // PDF 生成
-  const bytes = await renderReceiptPdf(result.data);
+  const pdfBuffer = await renderReceiptPdf(result.data);
 
   // filename は予約IDの先頭8文字（UUID形式はバリデーション済み）
   const safeId = result.data.reservationId.slice(0, 8).replace(/[^a-f0-9-]/gi, "");
-  return new Response(bytes.buffer as ArrayBuffer, {
+  return new Response(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="receipt-${safeId}.pdf"`,
