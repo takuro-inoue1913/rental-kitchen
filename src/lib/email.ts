@@ -25,6 +25,7 @@ type ReservationConfirmationParams = {
   totalPrice: number;
   options: Array<{ name: string; quantity: number; price: number }>;
   reservationId: string;
+  companyName?: string | null;
 };
 
 /**
@@ -64,6 +65,7 @@ export async function sendReservationConfirmation(
     totalPrice,
     options,
     reservationId,
+    companyName: params.companyName,
     siteUrl,
   });
 
@@ -105,6 +107,7 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     totalPrice,
     options,
     reservationId,
+    companyName,
     siteUrl,
   } = params;
 
@@ -132,6 +135,7 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     "━━━━━━━━━━━━━━━━━━━━━━━━",
     "■ 予約内容",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
+    ...(companyName ? [`会社名: ${companyName}`] : []),
     `日付: ${formattedDate}`,
     `時間: ${startTime} 〜 ${endTime}`,
     ...(optionLines ? ["", "■ オプション", optionLines] : []),
@@ -183,6 +187,7 @@ type CancellationEmailParams = {
   totalPrice: number;
   refundAmount: number;
   reservationId: string;
+  companyName?: string | null;
 };
 
 /**
@@ -211,6 +216,7 @@ export async function sendCancellationEmail(
     totalPrice: params.totalPrice,
     refundAmount: params.refundAmount,
     reservationId: params.reservationId,
+    companyName: params.companyName,
     siteUrl,
   });
 
@@ -252,6 +258,7 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
     totalPrice,
     refundAmount,
     reservationId,
+    companyName,
     siteUrl,
   } = params;
 
@@ -281,6 +288,7 @@ export function buildCancellationEmail(params: BuildCancellationEmailParams): {
     "━━━━━━━━━━━━━━━━━━━━━━━━",
     "■ キャンセルされた予約",
     "━━━━━━━━━━━━━━━━━━━━━━━━",
+    ...(companyName ? [`会社名: ${companyName}`] : []),
     `日付: ${formattedDate}`,
     `時間: ${startTime} 〜 ${endTime}`,
     `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,

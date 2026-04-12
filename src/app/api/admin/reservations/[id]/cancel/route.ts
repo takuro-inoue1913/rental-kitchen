@@ -26,7 +26,7 @@ export async function POST(
   const { data: reservation, error: fetchError } = await auth.adminClient
     .from("reservations")
     .select(
-      "id, user_id, date, start_time, end_time, status, total_price, guest_email, guest_name, stripe_payment_intent_id, google_event_id",
+      "id, user_id, date, start_time, end_time, status, total_price, guest_email, guest_name, stripe_payment_intent_id, google_event_id, billing_type, company_name",
     )
     .eq("id", id)
     .single();
@@ -110,6 +110,7 @@ export async function POST(
           totalPrice: reservation.total_price,
           refundAmount: actualRefundAmount,
           reservationId: reservation.id,
+          companyName: reservation.billing_type === "corporate" ? reservation.company_name : null,
         });
       } catch (err) {
         console.error("Cancellation email failed:", err);

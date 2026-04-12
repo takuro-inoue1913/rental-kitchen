@@ -14,6 +14,8 @@ type Reservation = {
   guest_name: string | null;
   guest_email: string | null;
   source: string;
+  billing_type: string;
+  company_name: string | null;
   created_at: string;
 };
 
@@ -54,6 +56,7 @@ type DisplayReservation = Reservation & {
   displayName: string;
   displaySource: string;
   formattedPrice: string;
+  isCorporate: boolean;
 };
 
 function toDisplayReservation(r: Reservation): DisplayReservation {
@@ -61,15 +64,19 @@ function toDisplayReservation(r: Reservation): DisplayReservation {
     label: r.status,
     className: "bg-zinc-100 text-zinc-500",
   };
+  const isCorporate = r.billing_type === "corporate";
   return {
     ...r,
     statusLabel: st.label,
     statusClassName: st.className,
     formattedDate: formatDate(r.date),
     timeRange: `${r.start_time.slice(0, 5)}-${r.end_time.slice(0, 5)}`,
-    displayName: r.guest_name || r.guest_email || "—",
+    displayName: isCorporate && r.company_name
+      ? r.company_name
+      : r.guest_name || r.guest_email || "—",
     displaySource: resolveSource(r.source),
     formattedPrice: `¥${r.total_price.toLocaleString()}`,
+    isCorporate,
   };
 }
 
@@ -79,6 +86,7 @@ export function ReservationTable() {
   const [dateFrom, setDateFrom] = useState(todayString());
   const [dateTo, setDateTo] = useState("");
   const [status, setStatus] = useState("");
+  const [billingFilter, setBillingFilter] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +144,18 @@ export function ReservationTable() {
             ))}
           </select>
         </label>
+        <label className="flex flex-col text-xs text-zinc-500">
+          請求区分
+          <select
+            value={billingFilter}
+            onChange={(e) => setBillingFilter(e.target.value)}
+            className="mt-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          >
+            <option value="">すべて</option>
+            <option value="individual">個人</option>
+            <option value="corporate">法人</option>
+          </select>
+        </label>
       </div>
 
       {/* テーブル */}
@@ -152,7 +172,10 @@ export function ReservationTable() {
         <p className="text-center text-zinc-500 py-12">予約がありません</p>
       ) : (
         (() => {
-          const rows = reservations.map(toDisplayReservation);
+          const allRows = reservations.map(toDisplayReservation);
+          const rows = billingFilter
+            ? allRows.filter((r) => r.billing_type === billingFilter)
+            : allRows;
           return (
             <>
               {/* モバイル: カード表示 */}
@@ -167,11 +190,18 @@ export function ReservationTable() {
                       <span className="font-medium text-sm text-zinc-900">
                         {r.formattedDate}
                       </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.statusClassName}`}
-                      >
-                        {r.statusLabel}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {r.isCorporate && (
+                          <span className="rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 text-xs font-medium">
+                            法人
+                          </span>
+                        )}
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.statusClassName}`}
+                        >
+                          {r.statusLabel}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between text-xs text-zinc-500">
                       <span>{r.timeRange}</span>
@@ -220,6 +250,11 @@ export function ReservationTable() {
                           >
                             {r.statusLabel}
                           </span>
+                          {r.isCorporate && (
+                            <span className="ml-1.5 inline-block rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 text-xs font-medium">
+                              法人
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 text-zinc-500 text-xs">
                           {r.displaySource}

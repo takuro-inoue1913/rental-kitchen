@@ -37,7 +37,7 @@ export async function confirmReservation(
     .eq("id", reservationId)
     .eq("status", "pending")
     .select(
-      "id, date, start_time, end_time, guest_name, guest_email, google_event_id, total_price",
+      "id, date, start_time, end_time, guest_name, guest_email, google_event_id, total_price, billing_type, company_name",
     )
     .maybeSingle();
 
@@ -87,12 +87,14 @@ export async function confirmReservation(
       (o) => `  - ${o.name} ×${o.quantity}（¥${o.price.toLocaleString()}）`,
     );
 
+    const isCorporate = updated.billing_type === "corporate" && !!updated.company_name;
     const eventId = await createCalendarEvent({
       date: updated.date,
       startTime: updated.start_time.slice(0, 5),
       endTime: updated.end_time.slice(0, 5),
       summary: "オーナー利用",
       description: [
+        ...(isCorporate ? [`法人: ${updated.company_name}`] : []),
         `名前: ${updated.guest_name ?? "—"}`,
         `メール: ${updated.guest_email ?? "—"}`,
         `予約時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
@@ -130,6 +132,7 @@ export async function confirmReservation(
           totalPrice: updated.total_price,
           options: optionList,
           reservationId: updated.id,
+          companyName: updated.billing_type === "corporate" ? updated.company_name : null,
         });
 
         if (!sent) {
