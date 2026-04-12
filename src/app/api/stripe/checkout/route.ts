@@ -171,7 +171,11 @@ export async function POST(request: NextRequest) {
       mode: "payment",
       line_items: lineItems,
       customer_email: guestEmail,
-      metadata: { reservation_id: reservation.id },
+      metadata: {
+        reservation_id: reservation.id,
+        billing_type: billingType,
+        ...(companyName ? { company_name: companyName } : {}),
+      },
       success_url: `${origin}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/reserve?cancelled=true`,
       expires_at:
