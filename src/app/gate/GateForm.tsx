@@ -25,7 +25,14 @@ export function GateForm() {
         window.location.href = "/";
         return; // フルリロードまで loading 状態を維持
       } else {
-        setError("アクセスコードが正しくありません");
+        let message = "アクセスコードが正しくありません";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          // JSON パース失敗時はデフォルトメッセージを使用
+        }
+        setError(message);
         setLoading(false);
       }
     } catch {
