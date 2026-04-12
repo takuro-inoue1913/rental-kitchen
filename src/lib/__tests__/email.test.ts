@@ -83,6 +83,11 @@ describe("buildConfirmationEmail", () => {
     expect(text).toContain("プロジェクター ×2  ¥1,000");
   });
 
+  it("本文にお問い合わせ先を含む", () => {
+    const { text } = buildConfirmationEmail(baseParams);
+    expect(text).toContain("お問い合わせ:");
+  });
+
   it("日曜日の日付フォーマットが正しい", () => {
     const { subject } = buildConfirmationEmail({
       ...baseParams,
