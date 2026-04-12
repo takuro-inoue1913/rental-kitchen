@@ -93,15 +93,14 @@ export async function confirmReservation(
       endTime: updated.end_time.slice(0, 5),
       summary: "オーナー利用",
       description: [
-        `予約ID: ${updated.id}`,
-        `予約者名: ${updated.guest_name ?? "—"}`,
+        `名前: ${updated.guest_name ?? "—"}`,
         `メール: ${updated.guest_email ?? "—"}`,
         `予約時間: ${updated.start_time.slice(0, 5)}-${updated.end_time.slice(0, 5)}`,
         ...(optionLines.length > 0
           ? ["", "オプション:", ...optionLines]
           : []),
         "",
-        `管理画面: ${siteUrl}/admin/reservations/${updated.id}`,
+        `${siteUrl}/admin/reservations/${updated.id}`,
       ].join("\n"),
     });
 

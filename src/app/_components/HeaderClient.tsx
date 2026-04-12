@@ -51,6 +51,9 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
+  // ゲートページではヘッダー非表示
+  if (pathname.startsWith("/gate")) return null;
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-4">
