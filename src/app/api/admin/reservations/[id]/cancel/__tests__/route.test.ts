@@ -46,6 +46,12 @@ function createTwoStepChainMock(
 }
 
 // --- モジュールモック ---
+vi.mock("server-only", () => ({}));
+
+vi.mock("@/lib/email", () => ({
+  sendCancellationEmail: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("@/lib/admin-auth", () => ({
   requireAdmin: vi.fn(),
 }));
