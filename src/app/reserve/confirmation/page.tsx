@@ -3,6 +3,8 @@ import { stripe } from "@/lib/stripe";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import Link from "next/link";
+import { buildCalendarLinks } from "@/lib/calendar-links";
+import { SITE_NAME, SITE_ADDRESS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +87,19 @@ export default async function ConfirmationPage({
   const isConfirmed = reservation.status === "confirmed";
   const isPending = reservation.status === "pending";
 
+  const calendarLinks = buildCalendarLinks({
+    date: reservation.date,
+    startTime: reservation.start_time.slice(0, 5),
+    endTime: reservation.end_time.slice(0, 5),
+    title: `${SITE_NAME} ご予約`,
+    location: SITE_ADDRESS,
+    description: [
+      `予約番号: ${reservation.id.slice(0, 8)}`,
+      `お名前: ${reservation.guest_name ?? "ゲスト"}`,
+      `合計: ¥${reservation.total_price.toLocaleString()}`,
+    ].join("\n"),
+  });
+
   return (
     <div className="flex flex-col flex-1 bg-zinc-50">
       <div className="mx-auto w-full max-w-lg px-4 py-16 text-center">
@@ -140,9 +155,30 @@ export default async function ConfirmationPage({
           </dl>
         </div>
 
+        {isConfirmed && (
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href={calendarLinks.google}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              Google カレンダーに追加
+            </a>
+            <a
+              href={calendarLinks.outlook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              Outlook カレンダーに追加
+            </a>
+          </div>
+        )}
+
         <Link
           href="/"
-          className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-amber-600 px-8 text-white font-medium transition-colors hover:bg-amber-700"
         >
           トップに戻る
         </Link>
