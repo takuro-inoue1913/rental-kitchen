@@ -83,6 +83,15 @@ describe("buildConfirmationEmail", () => {
     expect(text).toContain("プロジェクター ×2  ¥1,000");
   });
 
+  it("本文に消費税内訳を含む", () => {
+    const { text } = buildConfirmationEmail(baseParams);
+    // ¥14,000 → 税抜 ¥12,727 + 消費税 ¥1,273
+    expect(text).toContain("税抜");
+    expect(text).toContain("消費税");
+    expect(text).toContain("¥12,727");
+    expect(text).toContain("¥1,273");
+  });
+
   it("本文にお問い合わせ先を含む", () => {
     const { text } = buildConfirmationEmail(baseParams);
     expect(text).toContain("お問い合わせ:");
