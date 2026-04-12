@@ -64,10 +64,11 @@ export function BillingInfoForm({ value, onChange, defaultContactName }: Props) 
       {isCorporate && (
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-zinc-600 mb-1">
+            <label htmlFor="billing-company-name" className="block text-sm text-zinc-600 mb-1">
               会社名 <span className="text-red-500">*</span>
             </label>
             <input
+              id="billing-company-name"
               type="text"
               value={value.companyName}
               onChange={(e) =>
@@ -78,10 +79,11 @@ export function BillingInfoForm({ value, onChange, defaultContactName }: Props) 
             />
           </div>
           <div>
-            <label className="block text-sm text-zinc-600 mb-1">
+            <label htmlFor="billing-department" className="block text-sm text-zinc-600 mb-1">
               部署名
             </label>
             <input
+              id="billing-department"
               type="text"
               value={value.companyDepartment}
               onChange={(e) =>
@@ -92,10 +94,11 @@ export function BillingInfoForm({ value, onChange, defaultContactName }: Props) 
             />
           </div>
           <div>
-            <label className="block text-sm text-zinc-600 mb-1">
+            <label htmlFor="billing-contact-person" className="block text-sm text-zinc-600 mb-1">
               担当者名
             </label>
             <input
+              id="billing-contact-person"
               type="text"
               value={value.contactPersonName}
               onChange={(e) =>
@@ -110,10 +113,11 @@ export function BillingInfoForm({ value, onChange, defaultContactName }: Props) 
 
       {/* 利用目的（個人・法人共通） */}
       <div className={isCorporate ? "mt-3" : ""}>
-        <label className="block text-sm text-zinc-600 mb-1">
+        <label htmlFor="billing-usage-purpose" className="block text-sm text-zinc-600 mb-1">
           利用目的（領収書の但し書き）
         </label>
         <input
+          id="billing-usage-purpose"
           type="text"
           value={value.usagePurpose}
           onChange={(e) =>
