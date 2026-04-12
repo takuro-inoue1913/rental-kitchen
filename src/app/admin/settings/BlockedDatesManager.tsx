@@ -31,15 +31,23 @@ export function BlockedDatesManager() {
   const [newDate, setNewDate] = useState("");
   const [newReason, setNewReason] = useState("");
   const [adding, setAdding] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/admin/blocked-dates");
-      if (res.ok) {
-        const data = await res.json();
-        setDates(data.blocked_dates ?? []);
+      try {
+        const res = await fetch("/api/admin/blocked-dates");
+        if (res.ok) {
+          const data = await res.json();
+          setDates(data.blocked_dates ?? []);
+        } else {
+          setLoadError(true);
+        }
+      } catch {
+        setLoadError(true);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
   }, []);
@@ -48,43 +56,53 @@ export function BlockedDatesManager() {
     if (!newDate) return;
     setAdding(true);
     setMessage(null);
-    const res = await fetch("/api/admin/blocked-dates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: newDate, reason: newReason || null }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setDates((prev) =>
-        [...prev, data.blocked_date].sort((a, b) =>
-          a.date.localeCompare(b.date),
-        ),
-      );
-      setNewDate("");
-      setNewReason("");
-      setMessage({ type: "success", text: "追加しました" });
-    } else {
-      const data = await res.json();
-      setMessage({ type: "error", text: data.error ?? "追加に失敗しました" });
+    try {
+      const res = await fetch("/api/admin/blocked-dates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: newDate, reason: newReason || null }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDates((prev) =>
+          [...prev, data.blocked_date].sort((a, b) =>
+            a.date.localeCompare(b.date),
+          ),
+        );
+        setNewDate("");
+        setNewReason("");
+        setMessage({ type: "success", text: "追加しました" });
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error ?? "追加に失敗しました" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "通信エラーが発生しました" });
+    } finally {
+      setAdding(false);
     }
-    setAdding(false);
   }
 
   async function handleDelete(item: BlockedDate) {
     if (!confirm(`${formatDate(item.date)} の休業日を削除しますか？`)) return;
     setDeletingId(item.id);
     setMessage(null);
-    const res = await fetch(`/api/admin/blocked-dates?id=${item.id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      setDates((prev) => prev.filter((d) => d.id !== item.id));
-      setMessage({ type: "success", text: "削除しました" });
-    } else {
-      const data = await res.json();
-      setMessage({ type: "error", text: data.error ?? "削除に失敗しました" });
+    try {
+      const res = await fetch(`/api/admin/blocked-dates?id=${item.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDates((prev) => prev.filter((d) => d.id !== item.id));
+        setMessage({ type: "success", text: "削除しました" });
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error ?? "削除に失敗しました" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "通信エラーが発生しました" });
+    } finally {
+      setDeletingId(null);
     }
-    setDeletingId(null);
   }
 
   if (loading) {
@@ -99,7 +117,11 @@ export function BlockedDatesManager() {
 
   return (
     <div className="space-y-4">
-      {dates.length === 0 && (
+      {loadError && (
+        <p className="text-sm text-red-600">休業日の取得に失敗しました</p>
+      )}
+
+      {!loadError && dates.length === 0 && (
         <p className="text-sm text-zinc-500">登録された休業日はありません</p>
       )}
 
