@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
-
-const COOKIE_NAME = "site_access";
-const MAX_AGE = 60 * 60 * 24 * 30; // 30日
+import {
+  GATE_COOKIE_NAME,
+  GATE_COOKIE_MAX_AGE,
+  hashAccessCode,
+} from "@/lib/access-gate";
 
 /**
  * POST /api/gate
  * アクセスコードを検証し、正しければ Cookie をセットする。
+ * Cookie の値はコードのハッシュとし、コード変更時に古い Cookie を無効化する。
  */
 export async function POST(request: NextRequest) {
   const { code } = await request.json();
@@ -19,10 +22,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "アクセスコードが正しくありません" }, { status: 401 });
   }
 
+  const hash = hashAccessCode(expected);
   const response = Response.json({ success: true });
   response.headers.set(
     "Set-Cookie",
-    `${COOKIE_NAME}=verified; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax`,
+    `${GATE_COOKIE_NAME}=${hash}; Path=/; Max-Age=${GATE_COOKIE_MAX_AGE}; SameSite=Lax`,
   );
   return response;
 }

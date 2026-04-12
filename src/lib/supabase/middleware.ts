@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { GATE_COOKIE_NAME, hashAccessCode } from "@/lib/access-gate";
 
 function createRedirectResponse(
   request: NextRequest,
@@ -37,7 +38,9 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const isBypassed = GATE_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
 
-    if (!isBypassed && !request.cookies.get("site_access")) {
+    const cookie = request.cookies.get(GATE_COOKIE_NAME);
+    const expectedHash = hashAccessCode(accessCode);
+    if (!isBypassed && cookie?.value !== expectedHash) {
       const url = request.nextUrl.clone();
       url.pathname = "/gate";
       return NextResponse.redirect(url);
