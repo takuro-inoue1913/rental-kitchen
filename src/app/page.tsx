@@ -194,7 +194,7 @@ export default async function Home() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="リノスペキッチン神田TYD"
+                title="レンタルキッチン神田"
               />
             </div>
           </div>

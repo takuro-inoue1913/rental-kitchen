@@ -19,7 +19,7 @@ describe("buildConfirmationEmail", () => {
   it("件名に日付・時間・サイト名を含む", () => {
     const { subject } = buildConfirmationEmail(baseParams);
     expect(subject).toBe(
-      "【予約確定】2026年4月15日（水） 10:00〜14:00 - リノスペキッチン神田TYD",
+      "【予約確定】2026年4月15日（水） 10:00〜14:00 - レンタルキッチン神田",
     );
   });
 
