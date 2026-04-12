@@ -21,6 +21,11 @@ type Reservation = {
   stripe_payment_intent_id: string | null;
   refund_amount: number | null;
   cancelled_at: string | null;
+  billing_type: string;
+  company_name: string | null;
+  company_department: string | null;
+  contact_person_name: string | null;
+  usage_purpose: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -280,6 +285,27 @@ export function ReservationDetail() {
         />
         {reservation.notes && (
           <Row label="備考" value={reservation.notes} />
+        )}
+
+        {/* 請求情報 */}
+        <div className="pt-4" />
+        <Row
+          label="請求区分"
+          value={reservation.billing_type === "corporate" ? "法人" : "個人"}
+        />
+        {reservation.billing_type === "corporate" && (
+          <>
+            <Row label="会社名" value={reservation.company_name || "—"} />
+            {reservation.company_department && (
+              <Row label="部署名" value={reservation.company_department} />
+            )}
+            {reservation.contact_person_name && (
+              <Row label="担当者名" value={reservation.contact_person_name} />
+            )}
+          </>
+        )}
+        {reservation.usage_purpose && (
+          <Row label="利用目的" value={reservation.usage_purpose} />
         )}
 
         <div className="pt-4" />
