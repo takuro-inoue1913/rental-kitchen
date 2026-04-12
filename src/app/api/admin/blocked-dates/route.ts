@@ -40,10 +40,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 実在する日付かどうか検証
-  const parsed = new Date(date + "T00:00:00");
+  const [y, m, d] = date.split("-").map(Number);
+  const parsed = new Date(y, m - 1, d);
   if (
-    isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== date
+    parsed.getFullYear() !== y ||
+    parsed.getMonth() !== m - 1 ||
+    parsed.getDate() !== d
   ) {
     return Response.json(
       { error: "存在しない日付です" },
