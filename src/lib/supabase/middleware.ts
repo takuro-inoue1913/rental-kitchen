@@ -22,7 +22,28 @@ function createRedirectResponse(
   return redirectResponse;
 }
 
+/** アクセスコードゲートの対象外パス */
+const GATE_BYPASS_PREFIXES = [
+  "/gate",
+  "/api/gate",
+  "/api/stripe/webhook",
+  "/api/cron/",
+];
+
 export async function updateSession(request: NextRequest) {
+  // アクセスコードゲート（SITE_ACCESS_CODE が設定されている場合のみ有効）
+  const accessCode = process.env.SITE_ACCESS_CODE;
+  if (accessCode) {
+    const pathname = request.nextUrl.pathname;
+    const isBypassed = GATE_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+
+    if (!isBypassed && !request.cookies.get("site_access")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/gate";
+      return NextResponse.redirect(url);
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
