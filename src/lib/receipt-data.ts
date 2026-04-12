@@ -1,25 +1,41 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { InvoiceData } from "./invoice-pdf";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * 予約 ID から領収書 PDF に必要なデータを組み立てる。
- * 予約が存在しない場合や対象外ステータスの場合は null を返す。
+ * 成功時は `{ data }` を返し、予約が存在しない場合や対象外ステータス、
+ * 発行者情報未設定などのエラー時は `{ error, status }` を返す。
+ *
+ * @param userId 指定時は予約の所有権チェックを行う（ユーザー向けAPI用）。
+ *               省略時はチェックしない（管理者向けAPI用）。
  */
 export async function buildInvoiceData(
-  reservationId: string
+  reservationId: string,
+  userId?: string
 ): Promise<{ data: InvoiceData } | { error: string; status: number }> {
+  if (!UUID_RE.test(reservationId)) {
+    return { error: "不正な予約IDです", status: 400 };
+  }
+
   const supabase = createAdminClient();
 
   const { data: reservation, error: fetchError } = await supabase
     .from("reservations")
     .select(
-      "id, date, start_time, end_time, guest_name, billing_type, company_name, company_department, usage_purpose, base_price, total_price, status"
+      "id, user_id, date, start_time, end_time, guest_name, billing_type, company_name, company_department, usage_purpose, base_price, total_price, status"
     )
     .eq("id", reservationId)
     .single();
 
   if (fetchError || !reservation) {
     return { error: "予約が見つかりません", status: 404 };
+  }
+
+  // 所有権チェック（userId が指定されている場合）
+  if (userId && reservation.user_id !== userId) {
+    return { error: "この予約の領収書をダウンロードする権限がありません", status: 403 };
   }
 
   if (reservation.status !== "confirmed" && reservation.status !== "completed") {

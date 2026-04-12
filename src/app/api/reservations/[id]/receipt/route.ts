@@ -23,8 +23,8 @@ export async function GET(
     return Response.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  // データ取得
-  const result = await buildInvoiceData(id);
+  // データ取得（所有権チェック付き）
+  const result = await buildInvoiceData(id, user.id);
   if ("error" in result) {
     return Response.json({ error: result.error }, { status: result.status });
   }
@@ -32,10 +32,12 @@ export async function GET(
   // PDF 生成
   const bytes = await renderReceiptPdf(result.data);
 
+  // filename は予約IDの先頭8文字（UUID形式はバリデーション済み）
+  const safeId = result.data.reservationId.slice(0, 8).replace(/[^a-f0-9-]/gi, "");
   return new Response(bytes.buffer as ArrayBuffer, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="receipt-${id.slice(0, 8)}.pdf"`,
+      "Content-Disposition": `attachment; filename="receipt-${safeId}.pdf"`,
     },
   });
 }
