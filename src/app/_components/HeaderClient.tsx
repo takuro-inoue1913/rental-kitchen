@@ -63,7 +63,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          {!pathname.startsWith("/reserve") && (
+          {!pathname.startsWith("/reserve") && !pathname.startsWith("/gate") && (
             <LoadingLink
               href="/reserve"
               className="h-9 rounded-full bg-amber-600 px-3 sm:px-5 text-xs sm:text-sm text-white font-medium transition-colors hover:bg-amber-700"
@@ -72,7 +72,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
             </LoadingLink>
           )}
 
-          {user ? (
+          {pathname.startsWith("/gate") ? null : user ? (
             <div ref={menuRef} className="relative">
               <button
                 type="button"
