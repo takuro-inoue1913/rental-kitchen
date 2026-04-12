@@ -87,7 +87,7 @@ export async function confirmReservation(
       (o) => `  - ${o.name} ×${o.quantity}（¥${o.price.toLocaleString()}）`,
     );
 
-    const isCorporate = updated.billing_type === "corporate" && updated.company_name;
+    const isCorporate = updated.billing_type === "corporate" && !!updated.company_name;
     const eventId = await createCalendarEvent({
       date: updated.date,
       startTime: updated.start_time.slice(0, 5),
