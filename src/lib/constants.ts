@@ -6,7 +6,8 @@ export const CURRENCY = "jpy";
 
 export const SITE_ADDRESS =
   "〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301";
-export const CONTACT_EMAIL = "takuro.inoue1988@gmail.com";
+export const CONTACT_EMAIL =
+  process.env.CONTACT_EMAIL ?? "takuro.inoue1988@gmail.com";
 
 /** 予約の有効期限（分） — この時間内に決済が完了しない場合は自動キャンセル */
 export const RESERVATION_EXPIRY_MINUTES = 30;
