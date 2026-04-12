@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   let query = auth.adminClient
     .from("reservations")
     .select(
-      "id, date, start_time, end_time, status, total_price, guest_name, guest_email, source, created_at",
+      "id, date, start_time, end_time, status, total_price, guest_name, guest_email, source, billing_type, company_name, created_at",
     )
     .order("date", { ascending: false })
     .order("start_time", { ascending: false });
