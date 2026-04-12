@@ -11,14 +11,20 @@ import {
  * Cookie の値はコードのハッシュとし、コード変更時に古い Cookie を無効化する。
  */
 export async function POST(request: NextRequest) {
-  const { code } = await request.json();
-  const expected = process.env.SITE_ACCESS_CODE;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "リクエストボディが不正です" }, { status: 400 });
+  }
 
+  const expected = process.env.SITE_ACCESS_CODE;
   if (!expected) {
     return Response.json({ error: "ゲートが設定されていません" }, { status: 500 });
   }
 
-  if (!code || code !== expected) {
+  const code = (body as { code?: unknown })?.code;
+  if (typeof code !== "string" || code !== expected) {
     return Response.json({ error: "アクセスコードが正しくありません" }, { status: 401 });
   }
 
