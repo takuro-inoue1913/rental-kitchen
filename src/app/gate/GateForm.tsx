@@ -23,13 +23,13 @@ export function GateForm() {
 
       if (res.ok) {
         window.location.href = "/";
-        return;
+        return; // フルリロードまで loading 状態を維持
       } else {
         setError("アクセスコードが正しくありません");
+        setLoading(false);
       }
     } catch {
       setError("通信エラーが発生しました");
-    } finally {
       setLoading(false);
     }
   }
