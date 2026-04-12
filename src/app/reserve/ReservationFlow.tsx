@@ -8,6 +8,7 @@ import { DatePicker } from "@/app/_components/DatePicker";
 import { TimeDropdown } from "@/app/_components/TimeDropdown";
 import { OptionSelector } from "@/app/_components/OptionSelector";
 import { BookingSummary } from "@/app/_components/BookingSummary";
+import { BillingInfoForm, type BillingInfo } from "@/app/_components/BillingInfoForm";
 import { LoadingButton } from "@/app/_components/LoadingButton";
 import type { TimeSlot, AvailabilityResponse } from "@/app/api/availability/route";
 import type { Database, PricingType } from "@/lib/types";
@@ -67,6 +68,13 @@ export function ReservationFlow({ options, user }: Props) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({
+    billingType: "individual",
+    companyName: "",
+    companyDepartment: "",
+    contactPersonName: "",
+    usagePurpose: "",
+  });
 
   // 月キャッシュ: { "2026-04-10": AvailabilityResponse, ... }
   const [monthCache, setMonthCache] = useState<
@@ -214,6 +222,13 @@ export function ReservationFlow({ options, user }: Props) {
       setError("連続していない時間帯が含まれています。連続した時間帯を選択してください。");
       return;
     }
+
+    // 法人利用時に会社名が未入力ならエラー
+    if (billingInfo.billingType === "corporate" && !billingInfo.companyName.trim()) {
+      setError("法人利用の場合、会社名は必須です");
+      return;
+    }
+
     const sorted = [...selectedSlots].sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     );
@@ -232,6 +247,11 @@ export function ReservationFlow({ options, user }: Props) {
           optionIds: selectedOptionIds,
           guestEmail: user.email,
           guestName: user.fullName,
+          billingType: billingInfo.billingType,
+          companyName: billingInfo.companyName || undefined,
+          companyDepartment: billingInfo.companyDepartment || undefined,
+          contactPersonName: billingInfo.contactPersonName || undefined,
+          usagePurpose: billingInfo.usagePurpose || undefined,
         }),
       });
 
@@ -248,7 +268,7 @@ export function ReservationFlow({ options, user }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedDate, selectedSlots, selectedOptionIds, user, pricingType]);
+  }, [selectedDate, selectedSlots, selectedOptionIds, user, pricingType, billingInfo]);
 
   // daily: 選択された枠が何ブロック（連続範囲）あるか × 日額
   const selectedRangeCount =
@@ -432,6 +452,15 @@ export function ReservationFlow({ options, user }: Props) {
             selectedOptionIds={selectedOptionIds}
           />
         )}
+
+        {/* 請求情報 */}
+        <div className="mt-6">
+          <BillingInfoForm
+            value={billingInfo}
+            onChange={setBillingInfo}
+            defaultContactName={user?.fullName}
+          />
+        </div>
 
         {/* お客様情報（ログイン済みユーザー情報を表示） */}
         {user && (

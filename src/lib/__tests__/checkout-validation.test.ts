@@ -112,6 +112,121 @@ describe("parseCheckoutBody", () => {
     });
     expect("error" in result).toBe(true);
   });
+
+  it("billingType 省略時は individual になる", () => {
+    const result = parseCheckoutBody(validBody);
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.billingType).toBe("individual");
+      expect(result.data.companyName).toBeNull();
+      expect(result.data.companyDepartment).toBeNull();
+      expect(result.data.contactPersonName).toBeNull();
+      expect(result.data.usagePurpose).toBeNull();
+    }
+  });
+
+  it("法人利用で会社名ありを受け付ける", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "株式会社テスト",
+      companyDepartment: "開発部",
+      contactPersonName: "山田太郎",
+      usagePurpose: "撮影スタジオとして",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.billingType).toBe("corporate");
+      expect(result.data.companyName).toBe("株式会社テスト");
+      expect(result.data.companyDepartment).toBe("開発部");
+      expect(result.data.contactPersonName).toBe("山田太郎");
+      expect(result.data.usagePurpose).toBe("撮影スタジオとして");
+    }
+  });
+
+  it("法人利用で会社名なしを拒否", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+    });
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toContain("会社名");
+    }
+  });
+
+  it("法人利用で会社名が空文字を拒否", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "",
+    });
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toContain("会社名");
+    }
+  });
+
+  it("法人利用で会社名が空白のみを拒否", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "   ",
+    });
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toContain("会社名");
+    }
+  });
+
+  it("法人利用で会社名の前後の空白が除去される", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "corporate",
+      companyName: "  株式会社テスト  ",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.companyName).toBe("株式会社テスト");
+    }
+  });
+
+  it("個人利用時は法人フィールドが無視される", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "individual",
+      companyName: "株式会社テスト",
+      companyDepartment: "開発部",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.billingType).toBe("individual");
+      expect(result.data.companyName).toBeNull();
+      expect(result.data.companyDepartment).toBeNull();
+    }
+  });
+
+  it("不明な billingType は individual として扱う", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      billingType: "unknown",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.billingType).toBe("individual");
+    }
+  });
+
+  it("個人利用でも usagePurpose を設定できる", () => {
+    const result = parseCheckoutBody({
+      ...validBody,
+      usagePurpose: "料理教室として",
+    });
+    expect("data" in result).toBe(true);
+    if ("data" in result) {
+      expect(result.data.usagePurpose).toBe("料理教室として");
+    }
+  });
 });
 
 describe("areSlotsContiguous", () => {

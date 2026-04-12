@@ -146,3 +146,59 @@
 - Loading 状態・エラーバウンダリ
 - モバイルレスポンシブ対応
 - Vercel 本番デプロイ・カスタムドメイン設定
+
+---
+
+## Phase 8: 法人情報入力・利用目的フィールド追加
+
+**ブランチ**: `phase8/corporate-billing-info`
+**PR**: #31
+**ステータス**: レビュー中
+
+### 背景
+会社の経費でレンタルキッチンを利用するユーザーに対応するため、法人情報の入力と領収書発行の基盤を整備する。
+
+### 内容
+- DB マイグレーション: `reservations` テーブルに billing 系カラム追加
+  - `billing_type`（`individual` / `corporate`）
+  - `company_name`, `company_department`, `contact_person_name`, `usage_purpose`
+- `invoice_settings` テーブル新設（適格請求書の発行者情報）
+  - `issuer_name`, `issuer_address`, `issuer_registration_number`（T+13桁）
+  - 管理画面から編集可能
+- 予約フロー Step 4（確認画面）に法人/個人切替フォーム追加
+  - 法人選択時: 会社名（必須）、部署名・担当者名・利用目的（任意）
+- `checkout-validation.ts` に billing フィールドのバリデーション追加
+- Stripe checkout API に billing 情報の保存処理追加
+- テスト: バリデーション + コンポーネントロジック
+
+## Phase 9: 消費税内訳表示・領収書 PDF 生成
+
+**ブランチ**: `phase9/invoice-pdf`
+**ステータス**: 未着手
+
+### 内容
+- 消費税計算ユーティリティ（`src/lib/tax.ts`）
+  - 税込価格から税抜・税額を逆算（`floor(total / 1.10)`）
+- `@react-pdf/renderer` による領収書 PDF 生成
+  - 適格請求書（インボイス制度）の要件を満たすテンプレート
+  - 日本語フォント対応（Noto Sans JP）
+- `GET /api/reservations/[id]/receipt`: 領収書ダウンロード API
+- `GET/PUT /api/admin/settings/invoice`: 発行者情報設定 API
+- UI: 確認ページ・マイページ・管理画面に領収書ダウンロードボタン
+- `BookingSummary` に消費税内訳表示
+- 確認・キャンセルメールに消費税内訳追加
+- テスト: 税計算・API ルート・メール
+
+## Phase 10: 管理画面拡張・統合ブラッシュアップ
+
+**ブランチ**: `phase10/corporate-polish`
+**ステータス**: 未着手
+
+### 内容
+- 管理画面:
+  - 予約一覧に「法人」バッジ・会社名カラム・法人/個人フィルタ追加
+  - 予約詳細に「請求情報」セクション追加
+- Stripe メタデータに `billing_type`, `company_name` を追加
+- Google カレンダーイベントに法人名を追加
+- 確認・キャンセルメールに法人情報を追加
+- テスト: 管理画面の法人表示・メール拡張

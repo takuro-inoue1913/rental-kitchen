@@ -7,6 +7,8 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.length > 0;
 }
 
+export type BillingType = "individual" | "corporate";
+
 export type CheckoutBody = {
   date: string;
   startTime: string;
@@ -14,6 +16,11 @@ export type CheckoutBody = {
   optionIds: string[];
   guestEmail: string;
   guestName: string;
+  billingType: BillingType;
+  companyName: string | null;
+  companyDepartment: string | null;
+  contactPersonName: string | null;
+  usagePurpose: string | null;
 };
 
 export function parseCheckoutBody(
@@ -54,6 +61,34 @@ export function parseCheckoutBody(
     return { error: "endTime は startTime より後である必要があります" };
   }
 
+  const billingType: BillingType =
+    b.billingType === "corporate" ? "corporate" : "individual";
+
+  if (billingType === "corporate") {
+    if (
+      !isNonEmptyString(b.companyName) ||
+      (b.companyName as string).trim().length === 0
+    ) {
+      return { error: "法人利用の場合、会社名は必須です" };
+    }
+  }
+
+  const companyName =
+    billingType === "corporate" && isNonEmptyString(b.companyName)
+      ? (b.companyName as string).trim()
+      : null;
+  const companyDepartment =
+    billingType === "corporate" && isNonEmptyString(b.companyDepartment)
+      ? (b.companyDepartment as string).trim()
+      : null;
+  const contactPersonName =
+    billingType === "corporate" && isNonEmptyString(b.contactPersonName)
+      ? (b.contactPersonName as string).trim()
+      : null;
+  const usagePurpose = isNonEmptyString(b.usagePurpose)
+    ? (b.usagePurpose as string).trim()
+    : null;
+
   return {
     data: {
       date: b.date,
@@ -62,6 +97,11 @@ export function parseCheckoutBody(
       optionIds: optionIds as string[],
       guestEmail: b.guestEmail,
       guestName: b.guestName,
+      billingType,
+      companyName,
+      companyDepartment,
+      contactPersonName,
+      usagePurpose,
     },
   };
 }
