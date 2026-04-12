@@ -163,3 +163,130 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
 
   return { subject, text };
 }
+
+// ── キャンセルメール ──
+
+type CancellationEmailParams = {
+  to: string;
+  guestName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  totalPrice: number;
+  refundAmount: number;
+  reservationId: string;
+};
+
+/**
+ * 予約キャンセルメールを送信する。
+ * 送信失敗時は false を返す（呼び出し元でログ出力）。
+ */
+export async function sendCancellationEmail(
+  params: CancellationEmailParams,
+): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("sendCancellationEmail: RESEND_API_KEY is not set");
+    return false;
+  }
+  if (!process.env.EMAIL_FROM) {
+    console.error("sendCancellationEmail: EMAIL_FROM is not set");
+    return false;
+  }
+
+  const emailFrom = process.env.EMAIL_FROM;
+  const siteUrl = getSiteUrl();
+  const { subject, text } = buildCancellationEmail({
+    guestName: params.guestName,
+    date: params.date,
+    startTime: params.startTime,
+    endTime: params.endTime,
+    totalPrice: params.totalPrice,
+    refundAmount: params.refundAmount,
+    reservationId: params.reservationId,
+    siteUrl,
+  });
+
+  try {
+    const { error } = await getResend().emails.send({
+      from: emailFrom,
+      to: params.to,
+      subject,
+      text,
+    });
+
+    if (error) {
+      console.error("Resend cancellation email error:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Resend cancellation email send failed:", err);
+    return false;
+  }
+}
+
+type BuildCancellationEmailParams = Omit<CancellationEmailParams, "to"> & {
+  siteUrl: string;
+};
+
+/**
+ * キャンセルメールの件名と本文を生成する（テスト可能な純粋関数）。
+ */
+export function buildCancellationEmail(params: BuildCancellationEmailParams): {
+  subject: string;
+  text: string;
+} {
+  const {
+    guestName,
+    date,
+    startTime,
+    endTime,
+    totalPrice,
+    refundAmount,
+    reservationId,
+    siteUrl,
+  } = params;
+
+  const d = new Date(date + "T00:00:00");
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const formattedDate = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekdays[d.getDay()]}）`;
+
+  const refundLines =
+    refundAmount > 0
+      ? [
+          "",
+          "━━━━━━━━━━━━━━━━━━━━━━━━",
+          "■ 返金について",
+          "━━━━━━━━━━━━━━━━━━━━━━━━",
+          `返金額: ¥${refundAmount.toLocaleString()}`,
+          "返金はお支払い方法に応じて数日〜数週間で反映されます。",
+        ]
+      : [];
+
+  const text = [
+    `${guestName} 様`,
+    "",
+    `${SITE_NAME} のご予約がキャンセルされました。`,
+    "",
+    "━━━━━━━━━━━━━━━━━━━━━━━━",
+    "■ キャンセルされた予約",
+    "━━━━━━━━━━━━━━━━━━━━━━━━",
+    `日付: ${formattedDate}`,
+    `時間: ${startTime} 〜 ${endTime}`,
+    `合計金額: ¥${totalPrice.toLocaleString()}（税込）`,
+    ...refundLines,
+    "",
+    "━━━━━━━━━━━━━━━━━━━━━━━━",
+    "",
+    `予約ID: ${reservationId}`,
+    "",
+    `ご不明点がございましたら、お気軽にお問い合わせください。`,
+    `予約一覧: ${siteUrl}/my/reservations`,
+    "",
+    `このメールは ${SITE_NAME} から自動送信されています。`,
+  ].join("\n");
+
+  const subject = `【予約キャンセル】${formattedDate} ${startTime}〜${endTime} - ${SITE_NAME}`;
+
+  return { subject, text };
+}
