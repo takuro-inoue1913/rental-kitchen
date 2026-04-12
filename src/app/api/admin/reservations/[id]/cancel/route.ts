@@ -65,34 +65,16 @@ export async function POST(
     );
   }
 
-  // 5. キャンセルメール送信（fire-and-forget）
-  if (reservation.guest_email) {
-    void (async () => {
-      try {
-        await sendCancellationEmail({
-          to: reservation.guest_email!,
-          guestName: reservation.guest_name ?? "ゲスト",
-          date: reservation.date,
-          startTime: reservation.start_time.slice(0, 5),
-          endTime: reservation.end_time.slice(0, 5),
-          totalPrice: reservation.total_price,
-          refundAmount: policy.refundAmount,
-          reservationId: reservation.id,
-        });
-      } catch (err) {
-        console.error("Cancellation email failed:", err);
-      }
-    })();
-  }
-
-  // 6. Stripe 返金（返金額 > 0 かつ payment_intent_id が存在する場合）
+  // 5. Stripe 返金（返金額 > 0 かつ payment_intent_id が存在する場合）
   let refundWarning: string | null = null;
+  let actualRefundAmount = 0;
   if (policy.refundAmount > 0 && reservation.stripe_payment_intent_id) {
     try {
       await stripe.refunds.create({
         payment_intent: reservation.stripe_payment_intent_id,
         amount: policy.refundAmount,
       });
+      actualRefundAmount = policy.refundAmount;
 
       const { error: refundAmountUpdateError } = await auth.adminClient
         .from("reservations")
@@ -115,7 +97,27 @@ export async function POST(
     }
   }
 
-  // 6. Google カレンダーのイベントを削除
+  // 6. キャンセルメール送信（返金結果確定後、fire-and-forget）
+  if (reservation.guest_email) {
+    void (async () => {
+      try {
+        await sendCancellationEmail({
+          to: reservation.guest_email!,
+          guestName: reservation.guest_name ?? "ゲスト",
+          date: reservation.date,
+          startTime: reservation.start_time.slice(0, 5),
+          endTime: reservation.end_time.slice(0, 5),
+          totalPrice: reservation.total_price,
+          refundAmount: actualRefundAmount,
+          reservationId: reservation.id,
+        });
+      } catch (err) {
+        console.error("Cancellation email failed:", err);
+      }
+    })();
+  }
+
+  // 7. Google カレンダーのイベントを削除
   let calendarWarning: string | null = null;
   if (reservation.google_event_id) {
     const deleted = await deleteCalendarEvent(reservation.google_event_id);
