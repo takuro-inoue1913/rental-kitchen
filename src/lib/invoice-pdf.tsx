@@ -1,10 +1,26 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import { calculateTaxBreakdown } from "./tax";
+import path from "path";
+import fs from "fs";
+
+// ローカル開発時はファイルパスから、Vercel 環境では自身のデプロイURLから読む。
+// public/ はCDN配信されるがFunction内ファイルシステムには含まれないため。
+function getFontSrc(): string {
+  const localPath = path.join(process.cwd(), "public/fonts/NotoSansJP-Regular.ttf");
+  if (fs.existsSync(localPath)) {
+    return localPath;
+  }
+
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return `${baseUrl}/fonts/NotoSansJP-Regular.ttf`;
+}
 
 Font.register({
   family: "NotoSansJP",
-  src: process.cwd() + "/public/fonts/NotoSansJP-Regular.ttf",
+  src: getFontSrc(),
 });
 
 const styles = StyleSheet.create({
