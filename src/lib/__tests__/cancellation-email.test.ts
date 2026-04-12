@@ -65,6 +65,11 @@ describe("buildCancellationEmail", () => {
     expect(text).toContain("https://example.com/my/reservations");
   });
 
+  it("本文にお問い合わせ先を含む", () => {
+    const { text } = buildCancellationEmail(baseParams);
+    expect(text).toContain("お問い合わせ:");
+  });
+
   it("土日の日付が正しくフォーマットされる", () => {
     const { subject } = buildCancellationEmail({
       ...baseParams,
