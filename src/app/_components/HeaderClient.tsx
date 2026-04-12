@@ -51,6 +51,9 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
+  // ゲートページではヘッダー非表示
+  if (pathname.startsWith("/gate")) return null;
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-4">
@@ -63,7 +66,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          {!pathname.startsWith("/reserve") && !pathname.startsWith("/gate") && (
+          {!pathname.startsWith("/reserve") && (
             <LoadingLink
               href="/reserve"
               className="h-9 rounded-full bg-amber-600 px-3 sm:px-5 text-xs sm:text-sm text-white font-medium transition-colors hover:bg-amber-700"
@@ -72,7 +75,7 @@ export function HeaderClient({ user, isAdmin = false }: Props) {
             </LoadingLink>
           )}
 
-          {pathname.startsWith("/gate") ? null : user ? (
+          {user ? (
             <div ref={menuRef} className="relative">
               <button
                 type="button"
