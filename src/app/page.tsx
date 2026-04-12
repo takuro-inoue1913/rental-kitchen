@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { SITE_NAME, SITE_DESCRIPTION, SITE_ADDRESS } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { HeroSlider } from "@/app/_components/HeroSlider";
 import { Gallery } from "@/app/_components/Gallery";
@@ -176,7 +176,7 @@ export default async function Home() {
           <div className="grid gap-8 md:grid-cols-2 items-start">
             <div className="text-center md:text-left">
               <p className="text-zinc-700 font-medium text-lg">
-                〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301
+                {SITE_ADDRESS}
               </p>
               <div className="mt-4 space-y-2 text-zinc-600">
                 <p>JR山手線 神田駅 徒歩5分</p>
