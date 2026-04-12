@@ -25,10 +25,16 @@ export default async function Home() {
     .select("pricing_type, price_per_slot")
     .eq("is_active", true);
 
-  const dailyRule = rules?.find((r) => r.pricing_type === "daily");
-  const hourlyRule = rules?.find((r) => r.pricing_type === "hourly");
-  const dailyPrice = dailyRule?.price_per_slot ?? 11000;
-  const hourlyPrice = hourlyRule?.price_per_slot ?? 2500;
+  const dailyPrices = rules
+    ?.filter((r) => r.pricing_type === "daily")
+    .map((r) => r.price_per_slot) ?? [];
+  const hourlyPrices = rules
+    ?.filter((r) => r.pricing_type === "hourly")
+    .map((r) => r.price_per_slot) ?? [];
+  const dailyMin = dailyPrices.length > 0 ? Math.min(...dailyPrices) : 11000;
+  const hourlyMin = hourlyPrices.length > 0 ? Math.min(...hourlyPrices) : 2500;
+  const dailyHasRange = new Set(dailyPrices).size > 1;
+  const hourlyHasRange = new Set(hourlyPrices).size > 1;
   return (
     <div className="flex flex-col flex-1">
       {/* ヒーロー */}
@@ -55,8 +61,8 @@ export default async function Home() {
             人数制限なし。料金は曜日により異なります。
           </p>
           <div className="flex justify-center gap-6 flex-wrap">
-            <PriceCard label="平日" price={dailyPrice.toLocaleString()} unit="円/日（税込）" sub="丸一日貸切" />
-            <PriceCard label="土日祝" price={hourlyPrice.toLocaleString()} unit="円/時間（税込）" sub="1時間単位" />
+            <PriceCard label="平日" price={`${dailyMin.toLocaleString()}${dailyHasRange ? "〜" : ""}`} unit="円/日（税込）" sub="丸一日貸切" />
+            <PriceCard label="土日祝" price={`${hourlyMin.toLocaleString()}${hourlyHasRange ? "〜" : ""}`} unit="円/時間（税込）" sub="1時間単位" />
           </div>
         </div>
       </section>
