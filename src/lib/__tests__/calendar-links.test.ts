@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { buildCalendarLinks } from "../calendar-links";
+import { SITE_ADDRESS } from "../constants";
 
 const baseParams = {
   date: "2026-04-15",
   startTime: "10:00",
   endTime: "14:00",
   title: "リノスペキッチン神田TYD ご予約",
-  location: "〒101-0047 東京都千代田区内神田1丁目9 TYDビル 301",
+  location: SITE_ADDRESS,
   description: "予約番号: abc12345",
 };
 
