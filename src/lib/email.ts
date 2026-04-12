@@ -155,9 +155,12 @@ export function buildConfirmationEmail(params: BuildEmailParams): {
     "",
     `予約ID: ${reservationId}`,
     "",
-    `このメールは ${SITE_NAME} から自動送信されています。`,
     `ご不明点がございましたら、お気軽にお問い合わせください。`,
     `お問い合わせ: ${CONTACT_EMAIL}`,
+    "",
+    `予約一覧: ${siteUrl}/my/reservations`,
+    "",
+    `このメールは ${SITE_NAME} から自動送信されています。`,
   ].join("\n");
 
   const subject = `【予約確定】${formattedDate} ${startTime}〜${endTime} - ${SITE_NAME}`;
