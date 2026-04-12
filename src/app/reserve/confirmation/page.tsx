@@ -95,7 +95,7 @@ export default async function ConfirmationPage({
     location: SITE_ADDRESS,
     description: [
       `予約番号: ${reservation.id.slice(0, 8)}`,
-      `お名前: ${reservation.guest_name}`,
+      `お名前: ${reservation.guest_name ?? "ゲスト"}`,
       `合計: ¥${reservation.total_price.toLocaleString()}`,
     ].join("\n"),
   });
