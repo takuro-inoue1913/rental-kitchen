@@ -61,7 +61,7 @@ export function GateForm() {
       <button
         type="submit"
         disabled={loading || !code.trim()}
-        className="w-full rounded-lg bg-amber-600 px-4 py-3 text-base sm:text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50 cursor-pointer"
+        className="w-full rounded-lg bg-amber-600 px-4 py-3 text-base sm:text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50 enabled:cursor-pointer disabled:cursor-not-allowed"
       >
         {loading ? "確認中..." : "入場する"}
       </button>
