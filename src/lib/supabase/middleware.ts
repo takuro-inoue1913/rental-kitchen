@@ -35,13 +35,15 @@ function isBypassedPath(pathname: string): boolean {
   return false;
 }
 
-/** OGP クローラーの User-Agent パターン（ゲート対象外にする） */
-const BOT_UA_PATTERN =
-  /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|LINE|Googlebot|bingbot|Applebot/i;
+/** OGP プレビュー専用クローラーの User-Agent パターン（ゲート対象外にする） */
+const OGP_BOT_UA_PATTERN =
+  /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot-LinkExpanding|Discordbot|LineBot/i;
 
-function isBotRequest(request: NextRequest): boolean {
+function isOgpBotRequest(request: NextRequest): boolean {
+  const method = request.method;
+  if (method !== "GET" && method !== "HEAD") return false;
   const ua = request.headers.get("user-agent") ?? "";
-  return BOT_UA_PATTERN.test(ua);
+  return OGP_BOT_UA_PATTERN.test(ua);
 }
 
 export async function updateSession(request: NextRequest) {
@@ -53,7 +55,7 @@ export async function updateSession(request: NextRequest) {
 
     const cookie = request.cookies.get(GATE_COOKIE_NAME);
     const expectedHash = await hashAccessCode(accessCode);
-    if (!isBypassed && !isBotRequest(request) && cookie?.value !== expectedHash) {
+    if (!isBypassed && !isOgpBotRequest(request) && cookie?.value !== expectedHash) {
       const url = request.nextUrl.clone();
       url.pathname = "/gate";
       return NextResponse.redirect(url);
