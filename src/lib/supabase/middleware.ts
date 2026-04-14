@@ -35,6 +35,15 @@ function isBypassedPath(pathname: string): boolean {
   return false;
 }
 
+/** OGP クローラーの User-Agent パターン（ゲート対象外にする） */
+const BOT_UA_PATTERN =
+  /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|LINE|Googlebot|bingbot|Applebot/i;
+
+function isBotRequest(request: NextRequest): boolean {
+  const ua = request.headers.get("user-agent") ?? "";
+  return BOT_UA_PATTERN.test(ua);
+}
+
 export async function updateSession(request: NextRequest) {
   // アクセスコードゲート（SITE_ACCESS_CODE が設定されている場合のみ有効）
   const accessCode = process.env.SITE_ACCESS_CODE;
@@ -44,7 +53,7 @@ export async function updateSession(request: NextRequest) {
 
     const cookie = request.cookies.get(GATE_COOKIE_NAME);
     const expectedHash = await hashAccessCode(accessCode);
-    if (!isBypassed && cookie?.value !== expectedHash) {
+    if (!isBypassed && !isBotRequest(request) && cookie?.value !== expectedHash) {
       const url = request.nextUrl.clone();
       url.pathname = "/gate";
       return NextResponse.redirect(url);
