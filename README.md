@@ -125,10 +125,6 @@ PR / main push 時に自動実行:
 3. Vitest テスト
 4. main merge 時: Supabase マイグレーション自動適用
 
-### Cron Job
-
-- `GET /api/cron/sync-calendar` — 毎日 03:00 UTC に Google カレンダー同期
-
 ## ディレクトリ構成
 
 ```
