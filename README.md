@@ -26,7 +26,7 @@
 - **認証**: メール/パスワードによるログイン・会員登録
 - **マイページ**: 予約履歴・キャンセル（キャンセルポリシーに基づく自動返金）
 - **管理画面**: 予約一覧・詳細 / 料金設定 / オプション管理 / 休業日管理 / 手動確定・キャンセル
-- **Google カレンダー双方向同期**: 予約確定時にイベント自動作成 / 定期同期で既存予約を取り込み
+- **Google カレンダー連携**: 予約確定時にイベント自動作成 / キャンセル時にイベント自動削除
 - **メール通知**: 予約確定メール / キャンセルメール（返金情報付き）
 - **エラーハンドリング**: 各セグメントの error boundary / 404ページ
 - **カレンダー追加リンク**: 予約確定後に Google Calendar / Outlook へ追加
@@ -66,7 +66,6 @@ cp .env.local.example .env.local
 | `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | サービスアカウント秘密鍵 |
 | `RESEND_API_KEY` | Resend API キー |
 | `EMAIL_FROM` | 送信元メールアドレス |
-| `CRON_SECRET` | Vercel Cron 認証シークレット |
 | `NEXT_PUBLIC_SITE_URL` | サイト URL |
 
 ### 3. Supabase のセットアップ
@@ -124,10 +123,6 @@ PR / main push 時に自動実行:
 2. ESLint
 3. Vitest テスト
 4. main merge 時: Supabase マイグレーション自動適用
-
-### Cron Job
-
-- `GET /api/cron/sync-calendar` — 毎日 03:00 UTC に Google カレンダー同期
 
 ## ディレクトリ構成
 
