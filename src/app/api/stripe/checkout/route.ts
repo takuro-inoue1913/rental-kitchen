@@ -15,7 +15,8 @@ type AvailabilityRule =
 /**
  * POST /api/stripe/checkout
  *
- * 予約を pending で作成し、Stripe Checkout Session を返す。
+ * 予約情報を Stripe metadata に格納し、Checkout Session を返す。
+ * 予約レコードは決済完了後に Webhook で作成する。
  */
 export async function POST(request: NextRequest) {
   const parsed = parseCheckoutBody(await request.json());
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   const rule = rules[0];
   const pricingType = rule.pricing_type;
 
-  // 空き確認: Google カレンダーのみ（Phase 6 で Supabase も統合予定）
+  // 空き確認: Google カレンダー
   const calendarEvents = await getCalendarEvents(date);
   const bookedRanges = calendarEvents
     .filter((e) => !e.isAllDay)
@@ -95,86 +96,63 @@ export async function POST(request: NextRequest) {
   const optionsPrice = selectedOptions.reduce((sum, o) => sum + o.price, 0);
   const totalPrice = basePrice + optionsPrice;
 
-  // 予約を pending で作成
-  const { data: reservation, error: insertError } = await supabase
-    .from("reservations")
-    .insert({
-      guest_email: guestEmail,
-      guest_name: guestName,
-      date,
-      start_time: startTime,
-      end_time: endTime,
-      status: "pending",
-      source: "web",
-      base_price: basePrice,
-      total_price: totalPrice,
-      billing_type: billingType,
-      company_name: companyName,
-      company_department: companyDepartment,
-      contact_person_name: contactPersonName,
-      usage_purpose: usagePurpose,
-      ...(userId ? { user_id: userId } : {}),
-      // user_id はサーバーセッションから取得（クライアント送信値は使用しない）
-    })
-    .select("id")
-    .single();
-
-  if (insertError || !reservation) {
-    console.error("Reservation insert error:", insertError);
-    return Response.json(
-      { error: `予約の作成に失敗しました: ${insertError?.message ?? "unknown"}` },
-      { status: 500 }
-    );
-  }
-
-  // オプションを中間テーブルに挿入
-  if (selectedOptions.length > 0) {
-    await supabase.from("reservation_options").insert(
-      selectedOptions.map((o) => ({
-        reservation_id: reservation.id,
-        option_id: o.id,
-        quantity: 1,
-        price_at_booking: o.price,
-      }))
-    );
-  }
-
-  // Stripe Checkout Session 作成（失敗時は予約をキャンセル）
-  try {
-    const lineItems = [
-      {
-        price_data: {
-          currency: CURRENCY,
-          product_data: {
-            name:
-              pricingType === "daily"
-                ? `スペース利用（丸一日）${date}`
-                : `スペース利用 ${date} ${startTime}-${endTime}`,
-          },
-          unit_amount: basePrice,
+  // Stripe Checkout Session 作成（予約情報は metadata に格納）
+  const lineItems = [
+    {
+      price_data: {
+        currency: CURRENCY,
+        product_data: {
+          name:
+            pricingType === "daily"
+              ? `スペース利用（丸一日）${date}`
+              : `スペース利用 ${date} ${startTime}-${endTime}`,
         },
-        quantity: 1,
+        unit_amount: basePrice,
       },
-      ...selectedOptions.map((o) => ({
-        price_data: {
-          currency: CURRENCY,
-          product_data: { name: o.name },
-          unit_amount: o.price,
-        },
-        quantity: 1,
-      })),
-    ];
+      quantity: 1,
+    },
+    ...selectedOptions.map((o) => ({
+      price_data: {
+        currency: CURRENCY,
+        product_data: { name: o.name },
+        unit_amount: o.price,
+      },
+      quantity: 1,
+    })),
+  ];
 
-    const origin = request.headers.get("origin") || request.nextUrl.origin;
+  const origin = request.headers.get("origin") || request.nextUrl.origin;
 
+  try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       customer_email: guestEmail,
       metadata: {
-        reservation_id: reservation.id,
+        date,
+        start_time: startTime,
+        end_time: endTime,
+        guest_email: guestEmail,
+        guest_name: guestName,
+        base_price: String(basePrice),
+        total_price: String(totalPrice),
         billing_type: billingType,
         ...(companyName ? { company_name: companyName } : {}),
+        ...(companyDepartment ? { company_department: companyDepartment } : {}),
+        ...(contactPersonName ? { contact_person_name: contactPersonName } : {}),
+        ...(usagePurpose ? { usage_purpose: usagePurpose } : {}),
+        ...(userId ? { user_id: userId } : {}),
+        ...(selectedOptions.length > 0
+          ? {
+              options: JSON.stringify(
+                selectedOptions.map((o) => ({
+                  id: o.id,
+                  name: o.name,
+                  price: o.price,
+                }))
+              ),
+            }
+          : {}),
       },
       success_url: `${origin}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/reserve?cancelled=true`,
@@ -185,11 +163,6 @@ export async function POST(request: NextRequest) {
     return Response.json({ url: session.url });
   } catch (err) {
     console.error("Stripe session creation failed:", err);
-    // Stripe 失敗時は予約をキャンセルして孤児データを防ぐ
-    await supabase
-      .from("reservations")
-      .update({ status: "cancelled" })
-      .eq("id", reservation.id);
     return Response.json(
       { error: "決済セッションの作成に失敗しました" },
       { status: 500 }
