@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin-auth";
-import { confirmReservation } from "@/lib/confirm-reservation";
+import { confirmPendingReservation } from "@/lib/confirm-reservation";
 import type { NextRequest } from "next/server";
 
 /**
@@ -18,7 +18,7 @@ export async function POST(
 
   const { id } = await params;
 
-  const result = await confirmReservation(id);
+  const result = await confirmPendingReservation(id);
 
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: 500 });

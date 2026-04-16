@@ -71,6 +71,7 @@ export function MyPageProvider({ children }: { children: React.ReactNode }) {
           "id, date, start_time, end_time, status, total_price, created_at",
         )
         .eq("user_id", user.id)
+        .neq("status", "pending")
         .order("date", { ascending: false });
 
       setReservations(data ?? []);
