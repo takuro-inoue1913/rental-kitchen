@@ -37,6 +37,19 @@ export async function confirmReservation(
 ): Promise<ConfirmResult> {
   const supabase = createAdminClient();
 
+  // 0. 冪等性チェック（Webhook 再送時の重複予約防止）
+  if (input.stripeCheckoutSessionId) {
+    const { data: existing } = await supabase
+      .from("reservations")
+      .select("id")
+      .eq("stripe_checkout_session_id", input.stripeCheckoutSessionId)
+      .maybeSingle();
+
+    if (existing) {
+      return { ok: true, reservationId: existing.id };
+    }
+  }
+
   // 1. 予約レコードを confirmed で作成
   const { data: reservation, error: insertError } = await supabase
     .from("reservations")
@@ -84,7 +97,9 @@ export async function confirmReservation(
         }))
       );
     if (optError) {
-      console.error("confirmReservation: options insert failed:", optError);
+      console.error("confirmReservation: options insert failed, rolling back:", optError);
+      await supabase.from("reservations").delete().eq("id", reservation.id);
+      return { ok: false, error: "オプションの保存に失敗しました" };
     }
   }
 
@@ -263,7 +278,7 @@ export async function confirmPendingReservation(
   if (needsEmail) {
     void (async () => {
       try {
-        await sendReservationConfirmation({
+        const sent = await sendReservationConfirmation({
           to: updated.guest_email!,
           guestName: updated.guest_name ?? "ゲスト",
           date: updated.date,
@@ -274,8 +289,17 @@ export async function confirmPendingReservation(
           reservationId: updated.id,
           companyName: updated.billing_type === "corporate" ? updated.company_name : null,
         });
+        if (!sent) {
+          console.error("confirmPendingReservation: email failed", {
+            reservationId: updated.id,
+            to: updated.guest_email,
+          });
+        }
       } catch (err) {
-        console.error("confirmPendingReservation: email error", err);
+        console.error("confirmPendingReservation: email error", {
+          reservationId: updated.id,
+          error: err,
+        });
       }
     })();
   }

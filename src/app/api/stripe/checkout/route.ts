@@ -143,15 +143,7 @@ export async function POST(request: NextRequest) {
         ...(usagePurpose ? { usage_purpose: usagePurpose } : {}),
         ...(userId ? { user_id: userId } : {}),
         ...(selectedOptions.length > 0
-          ? {
-              options: JSON.stringify(
-                selectedOptions.map((o) => ({
-                  id: o.id,
-                  name: o.name,
-                  price: o.price,
-                }))
-              ),
-            }
+          ? { option_ids: selectedOptions.map((o) => o.id).join(",") }
           : {}),
       },
       success_url: `${origin}/reserve/confirmation?session_id={CHECKOUT_SESSION_ID}`,

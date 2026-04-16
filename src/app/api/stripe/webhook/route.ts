@@ -6,30 +6,62 @@ import { timeToMinutes } from "@/lib/time-utils";
 import { sendCancellationEmail } from "@/lib/email";
 import { NextRequest } from "next/server";
 
+type ParsedMetadata = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  guestEmail: string;
+  guestName: string;
+  basePrice: number;
+  totalPrice: number;
+  billingType: string;
+  companyName: string | null;
+  companyDepartment: string | null;
+  contactPersonName: string | null;
+  usagePurpose: string | null;
+  userId: string | null;
+  optionIds: string[];
+};
+
 /**
- * Stripe metadata から予約情報を復元する。
- * checkout route で格納した値をパースして返す。
+ * Stripe metadata から予約情報を復元・検証する。
+ * 必須キーが欠けている場合や数値が不正な場合は null を返す。
  */
-function parseReservationMetadata(metadata: Record<string, string>) {
-  const options: { id: string; name: string; price: number }[] = metadata.options
-    ? JSON.parse(metadata.options)
-    : [];
+function parseReservationMetadata(
+  metadata: Record<string, string>,
+): ParsedMetadata | null {
+  const { date, start_time, end_time, guest_email, guest_name, base_price, total_price } = metadata;
+
+  if (!date || !start_time || !end_time || !guest_email || !guest_name) {
+    return null;
+  }
+
+  const basePrice = Number(base_price);
+  const totalPrice = Number(total_price);
+  if (Number.isNaN(basePrice) || Number.isNaN(totalPrice)) {
+    return null;
+  }
+
+  let optionIds: string[] = [];
+  if (metadata.option_ids) {
+    optionIds = metadata.option_ids.split(",").filter(Boolean);
+  }
 
   return {
-    date: metadata.date,
-    startTime: metadata.start_time,
-    endTime: metadata.end_time,
-    guestEmail: metadata.guest_email,
-    guestName: metadata.guest_name,
-    basePrice: Number(metadata.base_price),
-    totalPrice: Number(metadata.total_price),
-    billingType: metadata.billing_type,
+    date,
+    startTime: start_time,
+    endTime: end_time,
+    guestEmail: guest_email,
+    guestName: guest_name,
+    basePrice,
+    totalPrice,
+    billingType: metadata.billing_type ?? "individual",
     companyName: metadata.company_name ?? null,
     companyDepartment: metadata.company_department ?? null,
     contactPersonName: metadata.contact_person_name ?? null,
     usagePurpose: metadata.usage_purpose ?? null,
     userId: metadata.user_id ?? null,
-    options,
+    optionIds,
   };
 }
 
@@ -65,6 +97,9 @@ async function hasScheduleConflict(
  * Stripe Webhook ハンドラ。
  * checkout.session.completed → 空き再チェック後、予約を confirmed で新規作成
  * checkout.session.expired → 予約レコードは未作成なので何もしない
+ *
+ * 注意: Stripe は非 2xx 応答時にリトライするため、
+ * 処理済みイベントや衝突時も 200 で応答する。
  */
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -100,9 +135,30 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      // metadata を検証・パース
       const reservationData = parseReservationMetadata(
         metadata as Record<string, string>,
       );
+
+      if (!reservationData) {
+        console.error("Webhook: invalid metadata, skipping", {
+          sessionId: session.id,
+          metadata,
+        });
+        break;
+      }
+
+      // オプション情報を DB から取得
+      let options: { id: string; name: string; price: number }[] = [];
+      if (reservationData.optionIds.length > 0) {
+        const supabase = createAdminClient();
+        const { data } = await supabase
+          .from("options")
+          .select("id, name, price")
+          .in("id", reservationData.optionIds)
+          .eq("is_active", true);
+        options = data ?? [];
+      }
 
       // 空き状況を再チェック（二重予約防止）
       const conflict = await hasScheduleConflict(
@@ -117,29 +173,29 @@ export async function POST(request: NextRequest) {
           { sessionId: session.id, date: reservationData.date },
         );
 
-        // 全額返金
         const paymentIntentId =
           typeof session.payment_intent === "string"
             ? session.payment_intent
             : null;
         if (paymentIntentId) {
           try {
-            await stripe.refunds.create({
-              payment_intent: paymentIntentId,
-            });
+            await stripe.refunds.create(
+              { payment_intent: paymentIntentId },
+              { idempotencyKey: `refund-conflict-${session.id}` },
+            );
           } catch (refundErr) {
             console.error("Webhook: refund failed:", refundErr);
           }
         }
 
-        return Response.json({
-          error: "Schedule conflict - refund issued",
-        }, { status: 409 });
+        // 衝突時も 200 で応答（Stripe リトライ防止）
+        break;
       }
 
       // 予約作成 + Google カレンダー + メール
       const result = await confirmReservation({
         ...reservationData,
+        options,
         stripeCheckoutSessionId: session.id,
         stripePaymentIntentId:
           typeof session.payment_intent === "string"
@@ -148,7 +204,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!result.ok) {
-        return Response.json({ error: result.error }, { status: 500 });
+        console.error("Webhook: confirmReservation failed:", result.error);
       }
       break;
     }
@@ -192,10 +248,6 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("Webhook: failed to cancel refunded reservation:", error);
-        return Response.json(
-          { error: "DB update failed" },
-          { status: 500 }
-        );
       }
 
       // キャンセルメール送信（fire-and-forget）
